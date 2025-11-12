@@ -6,7 +6,9 @@ dist/
 wheels/
 *.egg-info
 .env
+.env.*
 .venv
+venv/
 .aider*
 tmp/
 .history/
@@ -15,3 +17,24 @@ _binder.md
 src/prosemark/_version.py
 .hypothesis/
 .claude/settings.local.json
+
+# Python testing & type checking
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.tox/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

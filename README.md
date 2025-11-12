@@ -9,7 +9,6 @@ Linemark helps writers organize their work by breaking down documents into a hie
 Key features:
 - **File-based storage**: All content in plain Markdown files
 - **Hierarchical organization**: Tree structure of content nodes
-- **UUIDv7 identifiers**: Temporal ordering with collision resistance
 - **Editor integration**: Launch your preferred editor for content editing
 - **Atomic operations**: Safe file operations that preserve existing content
 - **Audit capabilities**: Check project integrity and consistency
@@ -25,11 +24,11 @@ cd linemark
 
 # Install with uv (recommended)
 uv sync
-uv run pmk --help
+uv run lmk --help
 
 # Or install with pip
 pip install -e .
-pmk --help
+lmk --help
 ```
 
 ### System Requirements
@@ -45,17 +44,16 @@ pmk --help
 # Create a new writing project
 mkdir my-novel
 cd my-novel
-pmk init --title "My Great Novel"
+lmk init --title "My Great Novel"
 ```
 
-This creates a `_binder.md` file with managed content sections for project structure.
 
 ### 2. Add Content Nodes
 
 ```bash
 # Add top-level chapters
-pmk add "Part 1: The Beginning"
-pmk add "Chapter 1: Origins" --parent 01234567
+lmk add "Part 1: The Beginning"
+lmk add "Chapter 1: Origins" --parent 01234567
 
 # The output shows the generated UUIDv7 identifier:
 # Added "Part 1: The Beginning" (01234567)
@@ -65,7 +63,7 @@ pmk add "Chapter 1: Origins" --parent 01234567
 ### 3. View Project Structure
 
 ```bash
-pmk structure
+lmk structure
 
 # Output:
 # Project Structure:
@@ -77,20 +75,20 @@ pmk structure
 
 ```bash
 # Edit the main content
-pmk edit 89abcdef --part draft
+lmk edit 89abcdef --part draft
 
 # Edit notes
-pmk edit 89abcdef --part notes
+lmk edit 89abcdef --part notes
 
 # Edit synopsis (metadata)
-pmk edit 89abcdef --part synopsis
+lmk edit 89abcdef --part synopsis
 ```
 
 ### 5. Create Freeform Content
 
 ```bash
 # Quick writing for ideas outside the main structure
-pmk write "Character development ideas"
+lmk write "Character development ideas"
 
 # Creates: 20250920T1530_01234567-89ab-cdef-0123-456789abcdef.md
 ```
@@ -99,21 +97,21 @@ pmk write "Character development ideas"
 
 ### Project Management
 
-- `pmk init --title TITLE [--path PATH]` - Initialize new project
-- `pmk audit [--fix]` - Check project integrity
+- `lmk init --title TITLE [--path PATH]` - Initialize new project
+- `lmk audit [--fix]` - Check project integrity
 
 ### Content Management
 
-- `pmk add TITLE [--parent ID] [--position INDEX]` - Add new node
-- `pmk edit NODE_ID --part {draft|notes|synopsis}` - Edit content
-- `pmk materialize TITLE [--parent ID]` - Convert placeholder to node
-- `pmk move NODE_ID [--parent ID] [--position INDEX]` - Reorganize hierarchy
-- `pmk remove NODE_ID [--delete-files] [--force]` - Remove node
+- `lmk add TITLE [--parent ID] [--position INDEX]` - Add new node
+- `lmk edit NODE_ID --part {draft|notes|synopsis}` - Edit content
+- `lmk materialize TITLE [--parent ID]` - Convert placeholder to node
+- `lmk move NODE_ID [--parent ID] [--position INDEX]` - Reorganize hierarchy
+- `lmk remove NODE_ID [--delete-files] [--force]` - Remove node
 
 ### Viewing and Organization
 
-- `pmk structure [--format {tree|json}]` - Display project hierarchy
-- `pmk write [TITLE]` - Create timestamped freeform file
+- `lmk structure [--format {tree|json}]` - Display project hierarchy
+- `lmk write [TITLE]` - Create timestamped freeform file
 
 ## File Structure
 
@@ -138,11 +136,11 @@ The `_binder.md` file contains your project structure between managed markers:
 
 Your project description and notes.
 
-<!-- pmk:begin-binder -->
+<!-- lmk:begin-binder -->
 - [Part 1: The Beginning](01234567.md)
   - [Chapter 1: Origins](89abcdef.md)
   - [Future Chapter]()
-<!-- pmk:end-binder -->
+<!-- lmk:end-binder -->
 
 Additional content is preserved outside the managed section.
 ```

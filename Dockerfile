@@ -2,7 +2,7 @@ FROM node:24-trixie
 
 ARG TZ
 ENV TZ="${TZ:-America/Los_Angeles}"
-ENV PROJECT="prosemark"
+ENV PROJECT="linemark"
 
 ARG CLAUDE_CODE_VERSION=latest
 
@@ -91,15 +91,14 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 
 # Install uv
 RUN pipx install uv
-ENV UV_PROJECT_ENVIRONMENT=/var/local/prosemark-env
+ENV UV_PROJECT_ENVIRONMENT=/var/local/linemark-env
 
 # Install Claude
 RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
-RUN claude config set -g theme dark
 
 # Install SuperClaude
-RUN pipx install SuperClaude \
-    && SuperClaude install --yes --force --components core mcp_docs modes agents mcp commands
+#RUN uv tool install superclaude
+#RUN uv tool run superclaude install --components core mcp_docs modes agents mcp commands
 
 RUN echo "alias cc='claude --dangerously-skip-permissions'" >> ~/.zshrc && \
     echo "alias p='pnpm'" >> ~/.zshrc
@@ -111,6 +110,6 @@ USER root
 RUN chmod +x /usr/local/bin/init-firewall.sh && \
   echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/node-firewall && \
   chmod 0440 /etc/sudoers.d/node-firewall
-RUN mkdir -p /var/local/prosemark-env && \
-    chown node:node /var/local/prosemark-env
+RUN mkdir -p /var/local/linemark-env && \
+    chown node:node /var/local/linemark-env
 USER node
