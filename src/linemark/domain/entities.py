@@ -244,9 +244,7 @@ class Outline(BaseModel):
             violations.append('Duplicate materialized paths detected')
 
         # Check required document types
-        for node in self.nodes.values():
-            if not node.validate_required_types():
-                violations.append(f'Node {node.sqid.value} missing required types')
+        violations.extend(f'Node {node.sqid.value} missing required types' for node in self.nodes.values() if not node.validate_required_types())
 
         return violations
 

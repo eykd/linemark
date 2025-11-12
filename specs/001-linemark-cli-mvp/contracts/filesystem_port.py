@@ -34,6 +34,7 @@ class FileSystemPort(Protocol):
             FileNotFoundError: If file does not exist
             PermissionError: If file is not readable
             OSError: For other filesystem errors (disk full, locked file, etc.)
+
         """
         ...
 
@@ -47,6 +48,7 @@ class FileSystemPort(Protocol):
         Raises:
             PermissionError: If file/directory not writable
             OSError: For other filesystem errors (disk full, locked file, etc.)
+
         """
         ...
 
@@ -62,6 +64,7 @@ class FileSystemPort(Protocol):
 
         Note:
             If file does not exist, this is a no-op (not an error).
+
         """
         ...
 
@@ -81,6 +84,7 @@ class FileSystemPort(Protocol):
         Note:
             Implementation must use atomic rename operations where possible
             (Path.rename on POSIX, MoveFileEx on Windows).
+
         """
         ...
 
@@ -97,6 +101,7 @@ class FileSystemPort(Protocol):
             FileNotFoundError: If directory does not exist
             PermissionError: If directory not readable
             NotADirectoryError: If path is not a directory
+
         """
         ...
 
@@ -112,6 +117,7 @@ class FileSystemPort(Protocol):
         Note:
             Returns False for directories, symlinks, and non-existent paths.
             Does not raise exceptions.
+
         """
         ...
 
@@ -128,5 +134,6 @@ class FileSystemPort(Protocol):
 
         Note:
             If directory already exists, this is a no-op (not an error).
+
         """
         ...

@@ -169,7 +169,7 @@ class TestNode:
 
     def test_create_node_with_defaults(self) -> None:
         """Create node with default document types (draft, notes)."""
-        from linemark.domain.entities import MaterializedPath, Node, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node
 
         mp = MaterializedPath.from_string('001')
         sqid = SQID(value='A3F7c')
@@ -189,7 +189,7 @@ class TestNode:
 
     def test_create_node_with_custom_types(self) -> None:
         """Create node with additional document types."""
-        from linemark.domain.entities import MaterializedPath, Node, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node
 
         mp = MaterializedPath.from_string('001-100')
         sqid = SQID(value='B8K2x')
@@ -206,7 +206,7 @@ class TestNode:
 
     def test_filename_generation(self) -> None:
         """Generate filename for specific document type."""
-        from linemark.domain.entities import MaterializedPath, Node, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node
 
         node = Node(
             sqid=SQID(value='A3F7c'),
@@ -221,7 +221,7 @@ class TestNode:
 
     def test_filenames_returns_all(self) -> None:
         """Get all filenames for node."""
-        from linemark.domain.entities import MaterializedPath, Node, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node
 
         node = Node(
             sqid=SQID(value='A3F7c'),
@@ -242,7 +242,7 @@ class TestNode:
 
     def test_validate_required_types_success(self) -> None:
         """Validation passes when draft and notes present."""
-        from linemark.domain.entities import MaterializedPath, Node, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node
 
         node = Node(
             sqid=SQID(value='A3F7c'),
@@ -256,7 +256,7 @@ class TestNode:
 
     def test_validate_required_types_failure(self) -> None:
         """Validation fails when required types missing."""
-        from linemark.domain.entities import MaterializedPath, Node, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node
 
         node_no_draft = Node(
             sqid=SQID(value='A3F7c'),
@@ -292,7 +292,7 @@ class TestOutline:
 
     def test_create_outline_with_nodes(self) -> None:
         """Create outline with initial nodes."""
-        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
 
         node1 = Node(
             sqid=SQID(value='A3F7c'),
@@ -311,7 +311,7 @@ class TestOutline:
 
     def test_get_by_sqid_found(self) -> None:
         """Retrieve node by SQID value."""
-        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
 
         node = Node(
             sqid=SQID(value='A3F7c'),
@@ -331,7 +331,7 @@ class TestOutline:
 
     def test_get_by_sqid_not_found(self) -> None:
         """Return None when SQID not found."""
-        from linemark.domain.entities import Outline, SQID
+        from linemark.domain.entities import SQID, Outline
 
         outline = Outline()
 
@@ -341,7 +341,7 @@ class TestOutline:
 
     def test_get_by_mp_found(self) -> None:
         """Retrieve node by materialized path."""
-        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
 
         node = Node(
             sqid=SQID(value='A3F7c'),
@@ -371,7 +371,7 @@ class TestOutline:
 
     def test_all_sorted(self) -> None:
         """Get all nodes sorted by materialized path."""
-        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
 
         node1 = Node(
             sqid=SQID(value='A3F7c'),
@@ -403,7 +403,7 @@ class TestOutline:
 
     def test_root_nodes(self) -> None:
         """Get root-level nodes (depth 1)."""
-        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
 
         node1 = Node(
             sqid=SQID(value='A3F7c'),
@@ -435,7 +435,7 @@ class TestOutline:
 
     def test_validate_invariants_valid_outline(self) -> None:
         """Validate outline with no violations."""
-        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
 
         node1 = Node(
             sqid=SQID(value='A3F7c'),
@@ -458,7 +458,7 @@ class TestOutline:
 
     def test_validate_invariants_duplicate_sqids(self) -> None:
         """Detect duplicate SQIDs."""
-        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
 
         node1 = Node(
             sqid=SQID(value='A3F7c'),
@@ -481,7 +481,7 @@ class TestOutline:
 
     def test_validate_invariants_duplicate_mps(self) -> None:
         """Detect duplicate materialized paths."""
-        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
 
         node1 = Node(
             sqid=SQID(value='A3F7c'),
@@ -504,7 +504,7 @@ class TestOutline:
 
     def test_validate_invariants_missing_required_types(self) -> None:
         """Detect missing required document types."""
-        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
 
         node = Node(
             sqid=SQID(value='A3F7c'),
@@ -532,7 +532,7 @@ class TestOutline:
 
     def test_find_next_sibling_position_second_child(self) -> None:
         """Find position for second child using tier spacing."""
-        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
 
         node1 = Node(
             sqid=SQID(value='A3F7c'),
@@ -549,18 +549,18 @@ class TestOutline:
 
     def test_find_next_sibling_position_tier_adjustment(self) -> None:
         """Test tier spacing adjusts based on sibling count."""
-        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
 
         # Create 9 siblings (next one should use tier 10)
         nodes = {}
         for i in range(9):
             sqid_val = f'SQID{i}'
-            mp_val = MaterializedPath.from_string(f'{(i+1)*100:03d}')
+            mp_val = MaterializedPath.from_string(f'{(i + 1) * 100:03d}')
             nodes[sqid_val] = Node(
                 sqid=SQID(value=sqid_val),
                 mp=mp_val,
-                title=f'Chapter {i+1}',
-                slug=f'chapter-{i+1}',
+                title=f'Chapter {i + 1}',
+                slug=f'chapter-{i + 1}',
             )
 
         outline = Outline(nodes=nodes)
@@ -571,7 +571,7 @@ class TestOutline:
 
     def test_find_next_sibling_position_exhausted(self) -> None:
         """Raise error when no space for new sibling."""
-        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
 
         node = Node(
             sqid=SQID(value='A3F7c'),
@@ -582,5 +582,5 @@ class TestOutline:
 
         outline = Outline(nodes={'A3F7c': node})
 
-        with pytest.raises(ValueError, match="No space for new sibling"):
+        with pytest.raises(ValueError, match='No space for new sibling'):
             outline.find_next_sibling_position(None)

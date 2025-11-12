@@ -56,27 +56,27 @@ This document provides a complete, executable task breakdown for implementing Li
 
 ### Domain Value Objects & Entities
 
-- [ ] T006 Write test for MaterializedPath.from_string() in tests/unit/test_entities.py
-- [ ] T007 Implement MaterializedPath value object in src/linemark/domain/entities.py with segments tuple, depth property, as_string property
-- [ ] T008 [P] Write test for MaterializedPath.parent() in tests/unit/test_entities.py
-- [ ] T009 [P] Implement MaterializedPath.parent() method returning parent path or None for root
-- [ ] T010 [P] Write test for MaterializedPath.child(position) in tests/unit/test_entities.py
-- [ ] T011 [P] Implement MaterializedPath.child(position) method creating child path
-- [ ] T012 [P] Write test for MaterializedPath validation (segments 1-999) in tests/unit/test_entities.py
-- [ ] T013 [P] Implement MaterializedPath field validator ensuring segments are 001-999
-- [ ] T014 [P] Write test for SQID value object in tests/unit/test_entities.py
-- [ ] T015 [P] Implement SQID value object in src/linemark/domain/entities.py with alphanumeric validation
-- [ ] T016 [P] Write test for Node entity creation in tests/unit/test_node.py
-- [ ] T017 [P] Implement Node entity in src/linemark/domain/entities.py with sqid, mp, title, slug, document_types fields
-- [ ] T018 [P] Write test for Node.filename() generation in tests/unit/test_node.py
-- [ ] T019 [P] Implement Node.filename(doc_type) method generating filename per FR-030 pattern
-- [ ] T020 [P] Write test for Outline aggregate in tests/unit/test_outline.py
+- [X] T006 Write test for MaterializedPath.from_string() in tests/unit/test_entities.py
+- [X] T007 Implement MaterializedPath value object in src/linemark/domain/entities.py with segments tuple, depth property, as_string property
+- [X] T008 [P] Write test for MaterializedPath.parent() in tests/unit/test_entities.py
+- [X] T009 [P] Implement MaterializedPath.parent() method returning parent path or None for root
+- [X] T010 [P] Write test for MaterializedPath.child(position) in tests/unit/test_entities.py
+- [X] T011 [P] Implement MaterializedPath.child(position) method creating child path
+- [X] T012 [P] Write test for MaterializedPath validation (segments 1-999) in tests/unit/test_entities.py
+- [X] T013 [P] Implement MaterializedPath field validator ensuring segments are 001-999
+- [X] T014 [P] Write test for SQID value object in tests/unit/test_entities.py
+- [X] T015 [P] Implement SQID value object in src/linemark/domain/entities.py with alphanumeric validation
+- [X] T016 [P] Write test for Node entity creation in tests/unit/test_entities.py
+- [X] T017 [P] Implement Node entity in src/linemark/domain/entities.py with sqid, mp, title, slug, document_types fields
+- [X] T018 [P] Write test for Node.filename() generation in tests/unit/test_entities.py
+- [X] T019 [P] Implement Node.filename(doc_type) method generating filename per FR-030 pattern
+- [X] T020 [P] Write test for Outline aggregate in tests/unit/test_entities.py (includes validate_invariants and find_next_sibling_position)
 
 ### Port Definitions
 
-- [ ] T021 [P] Create FileSystemPort protocol in src/linemark/ports/filesystem.py with read_file, write_file, delete_file, rename_file, list_markdown_files, file_exists, create_directory methods
-- [ ] T022 [P] Create SQIDGeneratorPort protocol in src/linemark/ports/sqid_generator.py with encode, decode methods
-- [ ] T023 [P] Create SlugifierPort protocol in src/linemark/ports/slugifier.py with slugify method
+- [X] T021 [P] Create FileSystemPort protocol in src/linemark/ports/filesystem.py with read_file, write_file, delete_file, rename_file, list_markdown_files, file_exists, create_directory methods
+- [X] T022 [P] Create SQIDGeneratorPort protocol in src/linemark/ports/sqid_generator.py with encode, decode methods
+- [X] T023 [P] Create SlugifierPort protocol in src/linemark/ports/slugifier.py with slugify method
 
 **Validation**: Run `pytest tests/unit/ --cov=src/linemark/domain --cov=src/linemark/ports` and verify 100% coverage on domain and ports.
 

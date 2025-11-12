@@ -45,5 +45,6 @@ class SlugifierPort(Protocol):
         Note:
             Same input MUST always produce same slug (deterministic).
             Empty or whitespace-only input should raise ValueError.
+
         """
         ...

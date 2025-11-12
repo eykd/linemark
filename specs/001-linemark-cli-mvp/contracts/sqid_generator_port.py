@@ -45,6 +45,7 @@ class SQIDGeneratorPort(Protocol):
         Note:
             Same counter value MUST always produce the same SQID (deterministic).
             This is critical for testing and reproducibility.
+
         """
         ...
 
@@ -65,5 +66,6 @@ class SQIDGeneratorPort(Protocol):
 
         Note:
             Used for deriving next counter from existing SQIDs at startup (FR-032).
+
         """
         ...
