@@ -432,3 +432,155 @@ class TestOutline:
         assert node1 in roots
         assert node3 in roots
         assert node2 not in roots
+
+    def test_validate_invariants_valid_outline(self) -> None:
+        """Validate outline with no violations."""
+        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+
+        node1 = Node(
+            sqid=SQID(value='A3F7c'),
+            mp=MaterializedPath.from_string('001'),
+            title='Chapter One',
+            slug='chapter-one',
+        )
+        node2 = Node(
+            sqid=SQID(value='B8K2x'),
+            mp=MaterializedPath.from_string('002'),
+            title='Chapter Two',
+            slug='chapter-two',
+        )
+
+        outline = Outline(nodes={'A3F7c': node1, 'B8K2x': node2})
+
+        violations = outline.validate_invariants()
+
+        assert violations == []
+
+    def test_validate_invariants_duplicate_sqids(self) -> None:
+        """Detect duplicate SQIDs."""
+        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+
+        node1 = Node(
+            sqid=SQID(value='A3F7c'),
+            mp=MaterializedPath.from_string('001'),
+            title='Chapter One',
+            slug='chapter-one',
+        )
+        node2 = Node(
+            sqid=SQID(value='A3F7c'),
+            mp=MaterializedPath.from_string('002'),
+            title='Chapter Two',
+            slug='chapter-two',
+        )
+
+        outline = Outline(nodes={'A3F7c': node1, 'duplicate': node2})
+
+        violations = outline.validate_invariants()
+
+        assert 'Duplicate SQIDs detected' in violations
+
+    def test_validate_invariants_duplicate_mps(self) -> None:
+        """Detect duplicate materialized paths."""
+        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+
+        node1 = Node(
+            sqid=SQID(value='A3F7c'),
+            mp=MaterializedPath.from_string('001'),
+            title='Chapter One',
+            slug='chapter-one',
+        )
+        node2 = Node(
+            sqid=SQID(value='B8K2x'),
+            mp=MaterializedPath.from_string('001'),
+            title='Chapter Two',
+            slug='chapter-two',
+        )
+
+        outline = Outline(nodes={'A3F7c': node1, 'B8K2x': node2})
+
+        violations = outline.validate_invariants()
+
+        assert 'Duplicate materialized paths detected' in violations
+
+    def test_validate_invariants_missing_required_types(self) -> None:
+        """Detect missing required document types."""
+        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+
+        node = Node(
+            sqid=SQID(value='A3F7c'),
+            mp=MaterializedPath.from_string('001'),
+            title='Chapter One',
+            slug='chapter-one',
+            document_types={'draft'},  # Missing 'notes'
+        )
+
+        outline = Outline(nodes={'A3F7c': node})
+
+        violations = outline.validate_invariants()
+
+        assert 'Node A3F7c missing required types' in violations
+
+    def test_find_next_sibling_position_first_child(self) -> None:
+        """Find position for first child (no siblings)."""
+        from linemark.domain.entities import Outline
+
+        outline = Outline()
+
+        position = outline.find_next_sibling_position(None)
+
+        assert position == 100
+
+    def test_find_next_sibling_position_second_child(self) -> None:
+        """Find position for second child using tier spacing."""
+        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+
+        node1 = Node(
+            sqid=SQID(value='A3F7c'),
+            mp=MaterializedPath.from_string('100'),  # First node at 100
+            title='Chapter One',
+            slug='chapter-one',
+        )
+
+        outline = Outline(nodes={'A3F7c': node1})
+
+        position = outline.find_next_sibling_position(None)
+
+        assert position == 200  # 100 + 100 (tier spacing)
+
+    def test_find_next_sibling_position_tier_adjustment(self) -> None:
+        """Test tier spacing adjusts based on sibling count."""
+        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+
+        # Create 9 siblings (next one should use tier 10)
+        nodes = {}
+        for i in range(9):
+            sqid_val = f'SQID{i}'
+            mp_val = MaterializedPath.from_string(f'{(i+1)*100:03d}')
+            nodes[sqid_val] = Node(
+                sqid=SQID(value=sqid_val),
+                mp=mp_val,
+                title=f'Chapter {i+1}',
+                slug=f'chapter-{i+1}',
+            )
+
+        outline = Outline(nodes=nodes)
+
+        position = outline.find_next_sibling_position(None)
+
+        assert position == 910  # 900 + 10 (tier 10 since we have 9 siblings)
+
+    def test_find_next_sibling_position_exhausted(self) -> None:
+        """Raise error when no space for new sibling."""
+        from linemark.domain.entities import MaterializedPath, Node, Outline, SQID
+
+        node = Node(
+            sqid=SQID(value='A3F7c'),
+            mp=MaterializedPath.from_string('999'),
+            title='Chapter One',
+            slug='chapter-one',
+        )
+
+        outline = Outline(nodes={'A3F7c': node})
+
+        with pytest.raises(ValueError, match="No space for new sibling"):
+            outline.find_next_sibling_position(None)

@@ -223,3 +223,61 @@ class Outline(BaseModel):
 
         """
         return [n for n in self.nodes.values() if n.mp.depth == 1]
+
+    def validate_invariants(self) -> list[str]:
+        """Check outline integrity, return list of violations.
+
+        Returns:
+            List of violation messages (empty if valid)
+
+        """
+        violations = []
+
+        # Check SQID uniqueness
+        sqids = [n.sqid.value for n in self.nodes.values()]
+        if len(sqids) != len(set(sqids)):
+            violations.append('Duplicate SQIDs detected')
+
+        # Check materialized path uniqueness
+        mps = [n.mp.as_string for n in self.nodes.values()]
+        if len(mps) != len(set(mps)):
+            violations.append('Duplicate materialized paths detected')
+
+        # Check required document types
+        for node in self.nodes.values():
+            if not node.validate_required_types():
+                violations.append(f'Node {node.sqid.value} missing required types')
+
+        return violations
+
+    def find_next_sibling_position(self, parent_mp: MaterializedPath | None) -> int:
+        """Find next available sibling position under parent.
+
+        Uses tiered numbering: 100 for first tier, 10 for mid, 1 for fine.
+
+        Args:
+            parent_mp: Parent materialized path (None for root level)
+
+        Returns:
+            Next available position integer (001-999)
+
+        Raises:
+            ValueError: If no space available (999 siblings exist)
+
+        """
+        siblings = [n for n in self.nodes.values() if n.mp.parent() == parent_mp]
+
+        if not siblings:
+            return 100  # First child at tier 100
+
+        max_position = max(n.mp.segments[-1] for n in siblings)
+        if max_position >= MAX_SEGMENT_VALUE:
+            msg = "No space for new sibling (run 'lmk compact')"
+            raise ValueError(msg)
+
+        # Use tier spacing based on sibling count (per data-model.md):
+        # Tier 100: for first 9 siblings (100, 200, 300, ..., 900)
+        # Tier 10: for next 90 siblings (010-900 in 10s)
+        # Tier 1: for remaining siblings (1-unit increments)
+        tier = 100 if len(siblings) < 9 else (10 if len(siblings) < 99 else 1)  # noqa: PLR2004
+        return max_position + tier
