@@ -93,6 +93,7 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 RUN pipx install uv
 ENV UV_PROJECT_ENVIRONMENT=/var/local/linemark-env
 
+
 # Install Claude
 RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 
@@ -103,7 +104,6 @@ RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 RUN echo "alias cc='claude --dangerously-skip-permissions'" >> ~/.zshrc && \
     echo "alias p='pnpm'" >> ~/.zshrc
 
-
 # Copy and set up firewall script
 COPY init-firewall.sh /usr/local/bin/
 USER root
@@ -113,3 +113,6 @@ RUN chmod +x /usr/local/bin/init-firewall.sh && \
 RUN mkdir -p /var/local/linemark-env && \
     chown node:node /var/local/linemark-env
 USER node
+
+# Configure git
+RUN git config --global user.name "David Eyk" && git config --global user.email "david@worldsenoughstudios.com"
