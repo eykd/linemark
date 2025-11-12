@@ -224,6 +224,7 @@ unfixable = []
     "RUF043",   # Regex patterns in pytest.raises - acceptable test pattern
     "PT017",    # Assertions on exception in except blocks - acceptable test pattern
     "RET504",   # Unnecessary assignment before return - acceptable for clarity in tests
+    "PT011",    # Broad pytest.raises - acceptable in contract tests
 ]
 
 
