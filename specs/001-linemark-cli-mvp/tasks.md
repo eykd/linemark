@@ -346,8 +346,8 @@ This document provides a complete, executable task breakdown for implementing Li
 ### Error Handling
 
 - [X] T083 [P] Implement domain exceptions in src/linemark/domain/exceptions.py (MaterializedPathExhaustedError, DuplicateSQIDError, etc.)
-- [ ] T084 [P] Add fail-fast error handling to all use cases per FR-042 (descriptive messages, no retries)
-- [ ] T085 [P] Add error handling to CLI commands with stderr output and appropriate exit codes
+- [X] T084 [P] Add fail-fast error handling to all use cases per FR-042 (descriptive messages, no retries)
+- [X] T085 [P] Add error handling to CLI commands with stderr output and appropriate exit codes
 
 ### Entry Points & Packaging
 
