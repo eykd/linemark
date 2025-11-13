@@ -52,7 +52,7 @@ def compile(  # noqa: A001
     separator: str,
     directory: Path,
 ) -> None:
-    r"""Compile all doctype files into a single document.
+    """Compile all doctype files into a single document.
 
     Concatenates content from all nodes containing the specified DOCTYPE,
     traversing in hierarchical order (depth-first). Optionally filter to a
@@ -145,7 +145,7 @@ def add(
     after: bool,  # noqa: ARG001, FBT001
     directory: Path,
 ) -> None:
-    r"""Add a new outline node.
+    """Add a new outline node.
 
     Creates a new node with the specified TITLE. By default, adds a root-level
     node. Use --child-of to create a child node, or --sibling-of with --before
@@ -215,7 +215,7 @@ def add(
     help='Working directory (default: current directory)',
 )
 def list(output_json: bool, directory: Path) -> None:  # noqa: A001, FBT001
-    r"""List all nodes in the outline.
+    """List all nodes in the outline.
 
     Displays the outline as a tree structure by default, or as nested JSON
     with --json flag.
@@ -286,7 +286,7 @@ def move(
     target_sqid_after: str | None,  # noqa: ARG001
     directory: Path,
 ) -> None:
-    r"""Move a node to a new position in the outline.
+    """Move a node to a new position in the outline.
 
     Moves the node with the specified SQID to a new position. All descendants
     are moved automatically with updated paths. SQIDs are preserved.
@@ -343,7 +343,7 @@ def move(
     help='Working directory (default: current directory)',
 )
 def rename(sqid: str, new_title: str, directory: Path) -> None:
-    r"""Rename a node with a new title.
+    """Rename a node with a new title.
 
     Updates the title in the draft file's frontmatter and renames all
     associated files to use the new slug. The SQID and materialized path
@@ -402,7 +402,7 @@ def rename(sqid: str, new_title: str, directory: Path) -> None:
     help='Working directory (default: current directory)',
 )
 def delete(sqid: str, recursive: bool, promote: bool, directory: Path) -> None:  # noqa: FBT001
-    r"""Delete a node from the outline.
+    """Delete a node from the outline.
 
     By default, only deletes leaf nodes (nodes without children).
     Use --recursive to delete node and all descendants.
@@ -456,7 +456,7 @@ def delete(sqid: str, recursive: bool, promote: bool, directory: Path) -> None: 
     help='Working directory (default: current directory)',
 )
 def compact(sqid: str | None, directory: Path) -> None:
-    r"""Restore clean, evenly-spaced numbering to the outline.
+    """Restore clean, evenly-spaced numbering to the outline.
 
     Renumbers siblings at the specified level with even spacing (100s/10s/1s tier).
     If SQID provided, compacts children of that node. Otherwise compacts root level.
@@ -507,7 +507,7 @@ def compact(sqid: str | None, directory: Path) -> None:
     help='Working directory (default: current directory)',
 )
 def doctor(repair: bool, directory: Path) -> None:  # noqa: FBT001
-    r"""Validate outline integrity and repair common issues.
+    """Validate outline integrity and repair common issues.
 
     Checks for duplicate SQIDs, missing required files, and other integrity issues.
     With --repair flag, automatically fixes common problems like missing draft/notes files.
@@ -573,7 +573,7 @@ def types() -> None:
     help='Working directory (default: current directory)',
 )
 def types_list(sqid: str, directory: Path) -> None:
-    r"""List all document types for a node.
+    """List all document types for a node.
 
     Shows all document types associated with the specified node SQID.
 
@@ -619,7 +619,7 @@ def types_list(sqid: str, directory: Path) -> None:
     help='Working directory (default: current directory)',
 )
 def types_add(doc_type: str, sqid: str, directory: Path) -> None:
-    r"""Add a new document type to a node.
+    """Add a new document type to a node.
 
     Creates a new empty file with the specified document type.
     Required types (draft, notes) cannot be added as they already exist.
@@ -660,7 +660,7 @@ def types_add(doc_type: str, sqid: str, directory: Path) -> None:
     help='Working directory (default: current directory)',
 )
 def types_remove(doc_type: str, sqid: str, directory: Path) -> None:
-    r"""Remove a document type from a node.
+    """Remove a document type from a node.
 
     Deletes the file for the specified document type.
     Required types (draft, notes) cannot be removed.
