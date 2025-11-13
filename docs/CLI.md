@@ -383,14 +383,20 @@ lmk doctor --repair
 
 ### list
 
-List all nodes in the outline.
+List nodes in the outline, optionally filtered to a subtree.
 
 ```bash
-lmk list [OPTIONS]
+lmk list [SQID] [OPTIONS]
 ```
+
+**Arguments:**
+
+- `SQID` (optional): Filter to subtree starting at this SQID (@ prefix optional)
 
 **Options:**
 
+- `--show-doctypes`: Display document types for each node
+- `--show-files`: Display file paths for each node
 - `--json`: Output in JSON format instead of tree
 - `--directory DIRECTORY`: Working directory (default: current directory)
 
@@ -400,11 +406,13 @@ lmk list [OPTIONS]
 - Default: Tree format with Unicode box-drawing characters
 - JSON format: Nested structure with full node details
 - Nodes sorted by materialized path (hierarchical order)
+- Without SQID: Shows full outline
+- With SQID: Shows only specified node and its descendants
 
 **Examples:**
 
 ```bash
-# Show tree structure (default)
+# Show full outline (default)
 lmk list
 # Output:
 # Chapter One (@Gxn7qZp)
@@ -413,12 +421,40 @@ lmk list
 # └── Section 1.2 (@K7j2vLp)
 # Chapter Two (@M8h4nDx)
 
+# Show subtree starting at specific node
+lmk list @Gxn7qZp
+# Output:
+# Chapter One (@Gxn7qZp)
+# ├── Section 1.1 (@B2k5mNq)
+# │   └── Subsection A (@P9x3rTw)
+# └── Section 1.2 (@K7j2vLp)
+
+# Show with document types
+lmk list --show-doctypes
+# Output:
+# Chapter One (@Gxn7qZp)
+# └─ doctypes: draft, notes
+# ├── Section 1.1 (@B2k5mNq)
+# │   └─ doctypes: draft, notes, characters
+
+# Show with file paths
+lmk list --show-files
+# Output:
+# Chapter One (@Gxn7qZp)
+# └─ files: 100_Gxn7qZp_draft_chapter-one.md, 100_Gxn7qZp_notes_chapter-one.md
+# ├── Section 1.1 (@B2k5mNq)
+# │   └─ files: 100-10_B2k5mNq_draft_section-1-1.md, 100-10_B2k5mNq_notes_section-1-1.md
+
+# Combine all options
+lmk list @Gxn7qZp --show-doctypes --show-files --json
+
 # Show JSON structure
 lmk list --json
 ```
 
 **JSON Output Format:**
 
+Without metadata flags:
 ```json
 [
   {
@@ -441,9 +477,44 @@ lmk list --json
 ]
 ```
 
+With `--show-doctypes --show-files`:
+```json
+[
+  {
+    "sqid": "Gxn7qZp",
+    "mp": "100",
+    "title": "Chapter One",
+    "slug": "chapter-one",
+    "document_types": ["draft", "notes"],
+    "doctypes": ["draft", "notes"],
+    "files": [
+      "100_Gxn7qZp_draft_chapter-one.md",
+      "100_Gxn7qZp_notes_chapter-one.md"
+    ],
+    "children": []
+  }
+]
+```
+
+**Subtree Filtering:**
+
+When a SQID is provided, only that node and its descendants are shown:
+- Useful for focusing on specific sections
+- Works with all display options (tree, JSON, metadata)
+- Invalid SQID returns error with exit code 1
+
+**Metadata Display:**
+
+Metadata is displayed below each node in hierarchical order:
+1. **doctypes** (if `--show-doctypes`): Comma-separated, alphabetically sorted
+2. **files** (if `--show-files`): Comma-separated list of relative file paths
+
+Both tree and JSON formats support metadata display.
+
 **Exit Codes:**
 
 - `0`: Success (even if no nodes found)
+- `1`: Error (invalid SQID, SQID not found)
 
 ---
 
@@ -857,8 +928,14 @@ lmk compact
 # Compile only Part One
 lmk compile draft @Gxn7qZp > part-one.md
 
+# List Part One structure only (subtree filtering)
+lmk list @Gxn7qZp
+
 # List Part One structure as JSON
-lmk list --json | jq '.[] | select(.sqid == "Gxn7qZp")'
+lmk list @Gxn7qZp --json
+
+# Show Part One with all metadata
+lmk list @Gxn7qZp --show-doctypes --show-files
 
 # Compact children of Part One
 lmk compact @Gxn7qZp
@@ -901,6 +978,34 @@ lmk compile characters > all-characters.md
 
 # Remove outdated type
 lmk types remove worldbuilding @Gxn7qZp
+```
+
+### Viewing Outline Metadata
+
+```bash
+# View outline with document types
+lmk list --show-doctypes
+# Shows which document types each node has
+
+# View outline with file paths
+lmk list --show-files
+# Shows all files for each node
+
+# Combine both metadata views
+lmk list --show-doctypes --show-files
+# Shows both doctypes and files in hierarchical order
+
+# Get specific node's metadata as JSON
+lmk list @K7j2vLp --show-doctypes --show-files --json | jq '.'
+
+# Filter subtree and show all metadata
+lmk list @Gxn7qZp --show-doctypes --show-files
+# Only shows Part One and its children with all metadata
+
+# Find all nodes with specific doctype using jq
+lmk list --show-doctypes --json | jq -r '
+  .. | objects | select(.doctypes? | contains(["characters"])) | .title
+'
 ```
 
 ### Batch Operations
@@ -984,25 +1089,41 @@ _LMK_COMPLETE=fish_source lmk | source
    lmk list --json | jq '.[] | select(.mp | startswith("100"))'
    ```
 
-3. **Compacting**: Run `lmk compact` after major restructuring to maintain clean numbering
+3. **Subtree Filtering**: Use list with SQID to focus on specific sections
+   ```bash
+   # View only Chapter 1 and its subsections
+   lmk list @chapter1-sqid --show-doctypes --show-files
+   ```
 
-4. **Validation**: Run `lmk doctor` regularly, especially after manual file operations
+4. **Metadata Discovery**: Use `--show-doctypes` and `--show-files` to understand outline structure
+   ```bash
+   # See what document types exist across your outline
+   lmk list --show-doctypes
 
-5. **Backups**: Since operations are destructive, maintain git or backup system
+   # Find all files for specific node
+   lmk list @sqid --show-files --json | jq '.[0].files'
+   ```
+
+5. **Compacting**: Run `lmk compact` after major restructuring to maintain clean numbering
+
+6. **Validation**: Run `lmk doctor` regularly, especially after manual file operations
+
+7. **Backups**: Since operations are destructive, maintain git or backup system
    ```bash
    git init
    git add .
    git commit -m "Checkpoint before major reorganization"
    ```
 
-6. **Custom Separators**: Use form feed (`\f`) for print-friendly separations
+8. **Custom Separators**: Use form feed (`\f`) for print-friendly separations
    ```bash
    lmk compile draft --separator "\f" > printable.md
    ```
 
-7. **Subtree Operations**: Most commands support working on subtrees via SQID
+9. **Subtree Operations**: Most commands support working on subtrees via SQID
    ```bash
    lmk compile draft @chapter-sqid
+   lmk list @chapter-sqid --show-doctypes
    ```
 
 ## See Also
