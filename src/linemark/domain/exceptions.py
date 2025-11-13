@@ -45,3 +45,28 @@ class FileSystemError(LinemarkError):
 
 class ValidationError(LinemarkError):
     """Raised when outline invariants are violated."""
+
+
+class DoctypeNotFoundError(LinemarkError):
+    """Raised when specified doctype doesn't exist in compilation scope.
+
+    This error is raised during doctype compilation when the requested
+    document type (e.g., 'draft', 'notes') doesn't exist in any node
+    within the compilation scope (entire forest or specific subtree).
+    """
+
+    def __init__(self, doctype: str, sqid: str | None = None) -> None:
+        """Initialize exception with doctype and optional SQID.
+
+        Args:
+            doctype: The document type that was not found
+            sqid: Optional SQID identifying the subtree scope
+
+        """
+        scope = f'subtree @{sqid}' if sqid else 'forest'
+        super().__init__(
+            f"Doctype '{doctype}' not found in {scope}. "
+            f'Check doctype name and ensure at least one node has this file.'
+        )
+        self.doctype = doctype
+        self.sqid = sqid

@@ -11,8 +11,10 @@ from linemark.adapters.filesystem import FileSystemAdapter
 from linemark.adapters.slugifier import SlugifierAdapter
 from linemark.adapters.sqid_generator import SQIDGeneratorAdapter
 from linemark.cli.formatters import format_json, format_tree
+from linemark.domain.exceptions import DoctypeNotFoundError, NodeNotFoundError
 from linemark.use_cases.add_node import AddNodeUseCase
 from linemark.use_cases.compact_outline import CompactOutlineUseCase
+from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
 from linemark.use_cases.delete_node import DeleteNodeUseCase
 from linemark.use_cases.list_outline import ListOutlineUseCase
 from linemark.use_cases.manage_types import ManageTypesUseCase
@@ -28,6 +30,78 @@ def lmk() -> None:
     A command-line tool for managing hierarchical outlines of Markdown documents
     using filename-based organization.
     """
+
+
+@lmk.command()
+@click.argument('doctype')
+@click.argument('sqid', required=False)
+@click.option(
+    '--separator',
+    default='\n\n---\n\n',
+    help='Separator between documents (escape sequences interpreted)',
+)
+@click.option(
+    '--directory',
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=Path.cwd(),
+    help='Working directory (default: current directory)',
+)
+def compile(  # noqa: A001
+    doctype: str,
+    sqid: str | None,
+    separator: str,
+    directory: Path,
+) -> None:
+    """Compile all doctype files into a single document.
+
+    Concatenates content from all nodes containing the specified DOCTYPE,
+    traversing in hierarchical order (depth-first). Optionally filter to a
+    specific subtree by providing a SQID.
+
+    Examples:
+        # Compile all draft files
+        lmk compile draft
+
+        # Compile notes from specific subtree
+        lmk compile notes @Gxn7qZp
+
+        # Use custom separator
+        lmk compile draft --separator "===PAGE BREAK==="
+
+        # Save to file
+        lmk compile draft > compiled.md
+
+    """
+    try:
+        # Strip @ prefix if provided
+        clean_sqid = sqid.lstrip('@') if sqid else None
+
+        # Create adapter
+        filesystem = FileSystemAdapter()
+
+        # Execute use case
+        use_case = CompileDoctypeUseCase(filesystem=filesystem)
+        result = use_case.execute(
+            doctype=doctype,
+            directory=directory,
+            sqid=clean_sqid,
+            separator=separator,
+        )
+
+        # Output to stdout
+        if result:
+            click.echo(result)
+        # Empty result is silent success (no output)
+
+    except DoctypeNotFoundError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+    except NodeNotFoundError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+    except (OSError, PermissionError) as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(2)
 
 
 @lmk.command()
