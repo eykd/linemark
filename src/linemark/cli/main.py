@@ -13,6 +13,7 @@ from linemark.adapters.sqid_generator import SQIDGeneratorAdapter
 from linemark.cli.formatters import format_json, format_tree
 from linemark.use_cases.add_node import AddNodeUseCase
 from linemark.use_cases.list_outline import ListOutlineUseCase
+from linemark.use_cases.manage_types import ManageTypesUseCase
 from linemark.use_cases.move_node import MoveNodeUseCase
 
 
@@ -240,6 +241,139 @@ def move(
         # Output success message
         click.echo(f'Moved node @{sqid_clean} to {target_mp_clean}')
         click.echo('All files renamed successfully')
+
+    except ValueError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+
+
+@lmk.group()
+def types() -> None:
+    """Manage document types for outline nodes.
+
+    Commands for adding, removing, and listing document types associated
+    with outline nodes.
+    """
+
+
+@types.command('list')
+@click.argument('sqid')
+@click.option(
+    '--directory',
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=Path.cwd(),
+    help='Working directory (default: current directory)',
+)
+def types_list(sqid: str, directory: Path) -> None:
+    r"""List all document types for a node.
+
+    Shows all document types associated with the specified node SQID.
+
+    Examples:
+        \\b
+        # List types for a node
+        lmk types list @SQID1
+
+    """
+    try:
+        # Strip @ prefix if provided
+        sqid_clean = sqid.lstrip('@')
+
+        # Create adapter
+        filesystem = FileSystemAdapter()
+
+        # Execute use case
+        use_case = ManageTypesUseCase(filesystem=filesystem)
+        doc_types = use_case.list_types(sqid=sqid_clean, directory=directory)
+
+        # Output types
+        if doc_types:
+            click.echo(f'Document types for @{sqid_clean}:')
+            for doc_type in doc_types:
+                click.echo(f'  - {doc_type}')
+        else:
+            click.echo(f'No document types found for @{sqid_clean}', err=True)
+            sys.exit(1)
+
+    except ValueError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+
+
+@types.command('add')
+@click.argument('doc_type')
+@click.argument('sqid')
+@click.option(
+    '--directory',
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=Path.cwd(),
+    help='Working directory (default: current directory)',
+)
+def types_add(doc_type: str, sqid: str, directory: Path) -> None:
+    r"""Add a new document type to a node.
+
+    Creates a new empty file with the specified document type.
+    Required types (draft, notes) cannot be added as they already exist.
+
+    Examples:
+        \\b
+        # Add a characters type to a node
+        lmk types add characters @SQID1
+
+    """
+    try:
+        # Strip @ prefix if provided
+        sqid_clean = sqid.lstrip('@')
+
+        # Create adapter
+        filesystem = FileSystemAdapter()
+
+        # Execute use case
+        use_case = ManageTypesUseCase(filesystem=filesystem)
+        use_case.add_type(sqid=sqid_clean, doc_type=doc_type, directory=directory)
+
+        # Output success message
+        click.echo(f'Added type "{doc_type}" to node @{sqid_clean}')
+
+    except ValueError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+
+
+@types.command('remove')
+@click.argument('doc_type')
+@click.argument('sqid')
+@click.option(
+    '--directory',
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=Path.cwd(),
+    help='Working directory (default: current directory)',
+)
+def types_remove(doc_type: str, sqid: str, directory: Path) -> None:
+    r"""Remove a document type from a node.
+
+    Deletes the file for the specified document type.
+    Required types (draft, notes) cannot be removed.
+
+    Examples:
+        \\b
+        # Remove a characters type from a node
+        lmk types remove characters @SQID1
+
+    """
+    try:
+        # Strip @ prefix if provided
+        sqid_clean = sqid.lstrip('@')
+
+        # Create adapter
+        filesystem = FileSystemAdapter()
+
+        # Execute use case
+        use_case = ManageTypesUseCase(filesystem=filesystem)
+        use_case.remove_type(sqid=sqid_clean, doc_type=doc_type, directory=directory)
+
+        # Output success message
+        click.echo(f'Removed type "{doc_type}" from node @{sqid_clean}')
 
     except ValueError as e:
         click.echo(f'Error: {e}', err=True)

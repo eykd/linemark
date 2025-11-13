@@ -178,20 +178,20 @@ This document provides a complete, executable task breakdown for implementing Li
 
 ### Use Case Implementation
 
-- [ ] T049 [P] [US3] Write unit test for ManageTypesUseCase.list() in tests/unit/test_manage_types_use_case.py
-- [ ] T050 [P] [US3] Implement ManageTypesUseCase.list_types() in src/linemark/use_cases/manage_types.py
-- [ ] T051 [P] [US3] Write unit test for ManageTypesUseCase.add() in tests/unit/test_manage_types_use_case.py
-- [ ] T052 [P] [US3] Implement ManageTypesUseCase.add_type() in src/linemark/use_cases/manage_types.py
-- [ ] T053 [P] [US3] Write unit test for ManageTypesUseCase.remove() in tests/unit/test_manage_types_use_case.py
-- [ ] T054 [P] [US3] Implement ManageTypesUseCase.remove_type() in src/linemark/use_cases/manage_types.py with required type protection
+- [X] T049 [P] [US3] Write unit test for ManageTypesUseCase.list() in tests/unit/test_manage_types_use_case.py
+- [X] T050 [P] [US3] Implement ManageTypesUseCase.list_types() in src/linemark/use_cases/manage_types.py
+- [X] T051 [P] [US3] Write unit test for ManageTypesUseCase.add() in tests/unit/test_manage_types_use_case.py
+- [X] T052 [P] [US3] Implement ManageTypesUseCase.add_type() in src/linemark/use_cases/manage_types.py
+- [X] T053 [P] [US3] Write unit test for ManageTypesUseCase.remove() in tests/unit/test_manage_types_use_case.py
+- [X] T054 [P] [US3] Implement ManageTypesUseCase.remove_type() in src/linemark/use_cases/manage_types.py with required type protection
 
 ### CLI Implementation
 
-- [ ] T055 [US3] Implement `lmk types` command group in src/linemark/cli/main.py with list, add, remove subcommands
+- [X] T055 [US3] Implement `lmk types` command group in src/linemark/cli/main.py with list, add, remove subcommands
 
 ### Integration Test
 
-- [ ] T056 [US3] Write integration test in tests/integration/test_types_workflow.py verifying add/remove types preserves draft and notes
+- [X] T056 [US3] Write integration test in tests/integration/test_types_workflow.py verifying add/remove types preserves draft and notes
 
 **Story 3 Validation**: Run integration test. User should be able to manage document types without affecting required files.
 
