@@ -18,6 +18,7 @@ from linemark.use_cases.list_outline import ListOutlineUseCase
 from linemark.use_cases.manage_types import ManageTypesUseCase
 from linemark.use_cases.move_node import MoveNodeUseCase
 from linemark.use_cases.rename_node import RenameNodeUseCase
+from linemark.use_cases.validate_outline import ValidateOutlineUseCase
 
 
 @click.group()
@@ -402,6 +403,66 @@ def compact(sqid: str | None, directory: Path) -> None:
             click.echo(f'Compacted {len(renamed)} children of @{sqid_clean}')
         else:
             click.echo(f'Compacted {len(renamed)} root-level nodes')
+
+    except ValueError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+
+
+@lmk.command()
+@click.option(
+    '--repair',
+    is_flag=True,
+    help='Auto-repair common issues (missing files, etc.)',
+)
+@click.option(
+    '--directory',
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=Path.cwd(),
+    help='Working directory (default: current directory)',
+)
+def doctor(repair: bool, directory: Path) -> None:  # noqa: FBT001
+    r"""Validate outline integrity and repair common issues.
+
+    Checks for duplicate SQIDs, missing required files, and other integrity issues.
+    With --repair flag, automatically fixes common problems like missing draft/notes files.
+
+    Examples:
+        \b
+        # Check outline for issues
+        lmk doctor
+
+        \b
+        # Check and auto-repair issues
+        lmk doctor --repair
+
+    """
+    try:
+        # Create adapter
+        filesystem = FileSystemAdapter()
+
+        # Execute use case
+        use_case = ValidateOutlineUseCase(filesystem=filesystem)
+        result = use_case.execute(directory=directory, repair=repair)
+
+        # Output results
+        if result['valid']:
+            click.echo('✓ Outline is valid')
+            if result['repaired']:
+                click.echo('\nRepairs performed:')
+                for repair_msg in result['repaired']:
+                    click.echo(f'  • {repair_msg}')
+        else:
+            click.echo('✗ Outline has integrity issues:', err=True)
+            click.echo('', err=True)
+            for violation in result['violations']:
+                click.echo(f'  • {violation}', err=True)
+
+            if not repair:
+                click.echo('', err=True)
+                click.echo('Run with --repair to auto-fix common issues', err=True)
+
+            sys.exit(1)
 
     except ValueError as e:
         click.echo(f'Error: {e}', err=True)

@@ -301,16 +301,16 @@ This document provides a complete, executable task breakdown for implementing Li
 
 ### Use Case Implementation
 
-- [ ] T075 [P] [US7] Write unit test for ValidateOutlineUseCase in tests/unit/test_validate_outline_use_case.py
-- [ ] T076 [US7] Implement ValidateOutlineUseCase in src/linemark/use_cases/validate_outline.py checking invariants per Outline.validate_invariants() and auto-repairing issues
+- [X] T075 [P] [US7] Write unit test for ValidateOutlineUseCase in tests/unit/test_validate_outline_use_case.py
+- [X] T076 [US7] Implement ValidateOutlineUseCase in src/linemark/use_cases/validate_outline.py checking invariants per Outline.validate_invariants() and auto-repairing issues
 
 ### CLI Implementation
 
-- [ ] T077 [US7] Implement `lmk doctor` command in src/linemark/cli/main.py with repair logic and summary output
+- [X] T077 [US7] Implement `lmk doctor` command in src/linemark/cli/main.py with repair logic and summary output
 
 ### Integration Test
 
-- [ ] T078 [US7] Write integration test in tests/integration/test_doctor_workflow.py verifying detection and repair of duplicate SQIDs, missing types, invalid paths
+- [X] T078 [US7] Write integration test in tests/integration/test_doctor_workflow.py verifying detection and repair of duplicate SQIDs, missing types, invalid paths
 
 **Story 7 Validation**: Run integration test. User should be able to run doctor and see outline repaired.
 
