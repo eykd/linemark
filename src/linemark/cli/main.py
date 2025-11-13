@@ -58,16 +58,21 @@ def compile(  # noqa: A001
     traversing in hierarchical order (depth-first). Optionally filter to a
     specific subtree by providing a SQID.
 
+    \b
     Examples:
+        \b
         # Compile all draft files
         lmk compile draft
 
+    \b
         # Compile notes from specific subtree
         lmk compile notes @Gxn7qZp
 
+    \b
         # Use custom separator
         lmk compile draft --separator "===PAGE BREAK==="
 
+    \b
         # Save to file
         lmk compile draft > compiled.md
 
@@ -140,22 +145,23 @@ def add(
     after: bool,  # noqa: ARG001, FBT001
     directory: Path,
 ) -> None:
-    r"""Add a new outline node.
+    """Add a new outline node.
 
     Creates a new node with the specified TITLE. By default, adds a root-level
     node. Use --child-of to create a child node, or --sibling-of with --before
     or --after to position relative to an existing node.
 
+    \b
     Examples:
         \b
         # Add a root-level chapter
         lmk add "Chapter One"
 
-        \b
+    \b
         # Add a child section
         lmk add "Section 1.1" --child-of @SQID1
 
-        \b
+    \b
         # Add before an existing node
         lmk add "Prologue" --sibling-of @SQID1 --before
 
@@ -209,17 +215,18 @@ def add(
     help='Working directory (default: current directory)',
 )
 def list(output_json: bool, directory: Path) -> None:  # noqa: A001, FBT001
-    r"""List all nodes in the outline.
+    """List all nodes in the outline.
 
     Displays the outline as a tree structure by default, or as nested JSON
     with --json flag.
 
+    \b
     Examples:
         \b
         # Show tree structure
         lmk list
 
-        \b
+    \b
         # Show JSON structure
         lmk list --json
 
@@ -279,21 +286,22 @@ def move(
     target_sqid_after: str | None,  # noqa: ARG001
     directory: Path,
 ) -> None:
-    r"""Move a node to a new position in the outline.
+    """Move a node to a new position in the outline.
 
     Moves the node with the specified SQID to a new position. All descendants
     are moved automatically with updated paths. SQIDs are preserved.
 
+    \b
     Examples:
         \b
         # Move node to root level at position 200
         lmk move @SQID1 --to 200
 
-        \b
+    \b
         # Move node to be child of another node
         lmk move @SQID2 --to 100-200
 
-        \b
+    \b
         # Move node before another sibling (future)
         lmk move @SQID3 --to @SQID4 --before
 
@@ -335,18 +343,19 @@ def move(
     help='Working directory (default: current directory)',
 )
 def rename(sqid: str, new_title: str, directory: Path) -> None:
-    r"""Rename a node with a new title.
+    """Rename a node with a new title.
 
     Updates the title in the draft file's frontmatter and renames all
     associated files to use the new slug. The SQID and materialized path
     remain unchanged.
 
+    \b
     Examples:
         \b
         # Rename a node
         lmk rename @SQID1 "New Chapter Title"
 
-        \b
+    \b
         # Works with special characters
         lmk rename @SQID1 "Chapter 2: Hero's Journey"
 
@@ -393,22 +402,23 @@ def rename(sqid: str, new_title: str, directory: Path) -> None:
     help='Working directory (default: current directory)',
 )
 def delete(sqid: str, recursive: bool, promote: bool, directory: Path) -> None:  # noqa: FBT001
-    r"""Delete a node from the outline.
+    """Delete a node from the outline.
 
     By default, only deletes leaf nodes (nodes without children).
     Use --recursive to delete node and all descendants.
     Use --promote to delete node but promote children to parent level.
 
+    \b
     Examples:
         \b
         # Delete a leaf node
         lmk delete @SQID1
 
-        \b
+    \b
         # Delete node and all descendants
         lmk delete @SQID1 --recursive
 
-        \b
+    \b
         # Delete node but keep children (promote to parent level)
         lmk delete @SQID1 --promote
 
@@ -446,17 +456,18 @@ def delete(sqid: str, recursive: bool, promote: bool, directory: Path) -> None: 
     help='Working directory (default: current directory)',
 )
 def compact(sqid: str | None, directory: Path) -> None:
-    r"""Restore clean, evenly-spaced numbering to the outline.
+    """Restore clean, evenly-spaced numbering to the outline.
 
     Renumbers siblings at the specified level with even spacing (100s/10s/1s tier).
     If SQID provided, compacts children of that node. Otherwise compacts root level.
 
+    \b
     Examples:
         \b
         # Compact root-level nodes
         lmk compact
 
-        \b
+    \b
         # Compact children of specific node
         lmk compact @SQID1
 
@@ -496,17 +507,18 @@ def compact(sqid: str | None, directory: Path) -> None:
     help='Working directory (default: current directory)',
 )
 def doctor(repair: bool, directory: Path) -> None:  # noqa: FBT001
-    r"""Validate outline integrity and repair common issues.
+    """Validate outline integrity and repair common issues.
 
     Checks for duplicate SQIDs, missing required files, and other integrity issues.
     With --repair flag, automatically fixes common problems like missing draft/notes files.
 
+    \b
     Examples:
         \b
         # Check outline for issues
         lmk doctor
 
-        \b
+    \b
         # Check and auto-repair issues
         lmk doctor --repair
 
@@ -561,12 +573,13 @@ def types() -> None:
     help='Working directory (default: current directory)',
 )
 def types_list(sqid: str, directory: Path) -> None:
-    r"""List all document types for a node.
+    """List all document types for a node.
 
     Shows all document types associated with the specified node SQID.
 
+    \b
     Examples:
-        \\b
+        \b
         # List types for a node
         lmk types list @SQID1
 
@@ -606,13 +619,14 @@ def types_list(sqid: str, directory: Path) -> None:
     help='Working directory (default: current directory)',
 )
 def types_add(doc_type: str, sqid: str, directory: Path) -> None:
-    r"""Add a new document type to a node.
+    """Add a new document type to a node.
 
     Creates a new empty file with the specified document type.
     Required types (draft, notes) cannot be added as they already exist.
 
+    \b
     Examples:
-        \\b
+        \b
         # Add a characters type to a node
         lmk types add characters @SQID1
 
@@ -646,13 +660,14 @@ def types_add(doc_type: str, sqid: str, directory: Path) -> None:
     help='Working directory (default: current directory)',
 )
 def types_remove(doc_type: str, sqid: str, directory: Path) -> None:
-    r"""Remove a document type from a node.
+    """Remove a document type from a node.
 
     Deletes the file for the specified document type.
     Required types (draft, notes) cannot be removed.
 
+    \b
     Examples:
-        \\b
+        \b
         # Remove a characters type from a node
         lmk types remove characters @SQID1
 
