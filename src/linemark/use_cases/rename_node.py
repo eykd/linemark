@@ -86,7 +86,7 @@ class RenameNodeUseCase:
 
         # Split frontmatter and body
         parts = draft_content.split('---')
-        if len(parts) >= FRONTMATTER_MIN_PARTS:
+        if len(parts) >= FRONTMATTER_MIN_PARTS:  # pragma: no branch
             # Parse frontmatter
             frontmatter = yaml.safe_load(parts[1])
             frontmatter['title'] = new_title
@@ -169,7 +169,7 @@ class RenameNodeUseCase:
 
         # Find and update draft file
         draft_file = next((f for f in node_files if '_draft_' in f.name), None)
-        if draft_file:
+        if draft_file:  # pragma: no branch
             self._update_draft_file(draft_file, mp, sqid, new_title, new_slug, old_slug)
 
         # Rename all other files

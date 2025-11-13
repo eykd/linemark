@@ -165,3 +165,21 @@ class TestFileSystemPortContract:
 
         # Should not raise
         filesystem_port.create_directory(directory)
+
+    def test_list_markdown_files_on_file_raises_error(self, filesystem_port: FileSystemPort, tmp_path: Path) -> None:
+        """Listing markdown files on a file path raises NotADirectoryError."""
+        filepath = tmp_path / 'test.md'
+        filesystem_port.write_file(filepath, 'content')
+
+        with pytest.raises(NotADirectoryError):
+            filesystem_port.list_markdown_files(filepath)
+
+    def test_create_directory_when_path_is_file_raises_error(
+        self, filesystem_port: FileSystemPort, tmp_path: Path
+    ) -> None:
+        """Creating directory when path exists as a file raises FileExistsError."""
+        filepath = tmp_path / 'test.md'
+        filesystem_port.write_file(filepath, 'content')
+
+        with pytest.raises(FileExistsError):
+            filesystem_port.create_directory(filepath)

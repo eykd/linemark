@@ -124,3 +124,8 @@ class TestSlugifierPortContract:
             result = slugifier.slugify(text)
             assert not result.startswith('-'), f'Slug {result!r} starts with hyphen'
             assert not result.endswith('-'), f'Slug {result!r} ends with hyphen'
+
+    def test_slugify_only_special_characters_raises_error(self, slugifier: SlugifierPort) -> None:
+        """Text with only special characters that produce empty slug raises ValueError."""
+        with pytest.raises(ValueError, match='Input produced empty slug'):
+            slugifier.slugify('...')

@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from click.testing import CliRunner
 
 from linemark.cli.main import lmk
 
 
-def flatten_nodes(nodes: list) -> list:
+def flatten_nodes(nodes: list[Any]) -> list[dict[str, Any]]:
     """Flatten tree-structured JSON nodes to a flat list."""
-    result = []
+    result: list[dict[str, Any]] = []
     for node in nodes:
         # Add the node itself (without children key)
         node_copy = {k: v for k, v in node.items() if k != 'children'}

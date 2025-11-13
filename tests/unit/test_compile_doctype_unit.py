@@ -38,6 +38,25 @@ class FakeFileSystem:
             if path.startswith(dir_str) and path.endswith('.md')
         ])
 
+    def write_file(self, path: Path, content: str) -> None:
+        """Write file to in-memory storage."""
+        self.files[str(path)] = content
+
+    def delete_file(self, path: Path) -> None:
+        """Delete file from in-memory storage."""
+        if str(path) in self.files:
+            del self.files[str(path)]
+
+    def create_directory(self, directory: Path) -> None:
+        """Create directory in in-memory storage."""
+        self.directories.add(str(directory))
+
+    def rename_file(self, old_path: Path, new_path: Path) -> None:
+        """Rename file in in-memory storage."""
+        if str(old_path) in self.files:
+            self.files[str(new_path)] = self.files[str(old_path)]
+            del self.files[str(old_path)]
+
     def add_node(
         self,
         directory: Path,

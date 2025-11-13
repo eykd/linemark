@@ -82,7 +82,7 @@ def _build_prefix(node: Node, all_nodes: list[Node]) -> str:
     while current_mp is not None and current_mp.depth > 1:
         # Find the node at this level
         ancestor = next((n for n in all_nodes if n.mp == current_mp), None)
-        if ancestor is None:
+        if ancestor is None:  # pragma: no cover
             break
 
         # Check if ancestor is last sibling

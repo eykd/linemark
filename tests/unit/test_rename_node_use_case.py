@@ -48,6 +48,9 @@ class FakeFileSystem:
             self.files[str(new_path)] = self.files[str(old_path)]
             del self.files[str(old_path)]
 
+    def create_directory(self, directory: Path) -> None:
+        """Create directory (no-op for fake filesystem)."""
+
 
 class FakeSlugifier:
     """Fake slugifier adapter for testing."""

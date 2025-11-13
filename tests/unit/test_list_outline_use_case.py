@@ -21,6 +21,28 @@ class FakeFileSystem:
         """List markdown files in directory."""
         return [Path(path) for path in self.files if path.endswith('.md') and path.startswith(str(directory))]
 
+    def write_file(self, path: Path, content: str) -> None:
+        """Write file to in-memory storage."""
+        self.files[str(path)] = content
+
+    def delete_file(self, path: Path) -> None:
+        """Delete file from in-memory storage."""
+        if str(path) in self.files:
+            del self.files[str(path)]
+
+    def file_exists(self, path: Path) -> bool:
+        """Check if file exists."""
+        return str(path) in self.files
+
+    def create_directory(self, directory: Path) -> None:
+        """Create directory (no-op for fake filesystem)."""
+
+    def rename_file(self, old_path: Path, new_path: Path) -> None:
+        """Rename file."""
+        if str(old_path) in self.files:
+            self.files[str(new_path)] = self.files[str(old_path)]
+            del self.files[str(old_path)]
+
 
 def test_list_outline_returns_empty_for_empty_directory() -> None:
     """Test listing an empty directory returns empty outline."""

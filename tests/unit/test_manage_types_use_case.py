@@ -41,6 +41,15 @@ class FakeFileSystem:
         if str(filepath) in self.files:
             del self.files[str(filepath)]
 
+    def create_directory(self, directory: Path) -> None:
+        """Create directory (no-op for fake filesystem)."""
+
+    def rename_file(self, old_path: Path, new_path: Path) -> None:
+        """Rename file."""
+        if str(old_path) in self.files:
+            self.files[str(new_path)] = self.files[str(old_path)]
+            del self.files[str(old_path)]
+
 
 def test_list_types_shows_all_document_types() -> None:
     """Test listing document types for a node."""

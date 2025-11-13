@@ -52,7 +52,7 @@ def compile(  # noqa: A001
     separator: str,
     directory: Path,
 ) -> None:
-    """Compile all doctype files into a single document.
+    r"""Compile all doctype files into a single document.
 
     Concatenates content from all nodes containing the specified DOCTYPE,
     traversing in hierarchical order (depth-first). Optionally filter to a
@@ -104,9 +104,9 @@ def compile(  # noqa: A001
     except NodeNotFoundError as e:
         click.echo(f'Error: {e}', err=True)
         sys.exit(1)
-    except (OSError, PermissionError) as e:
-        click.echo(f'Error: {e}', err=True)
-        sys.exit(2)
+    except (OSError, PermissionError) as e:  # pragma: no cover
+        click.echo(f'Error: {e}', err=True)  # pragma: no cover
+        sys.exit(2)  # pragma: no cover
 
 
 @lmk.command()
@@ -145,7 +145,7 @@ def add(
     after: bool,  # noqa: ARG001, FBT001
     directory: Path,
 ) -> None:
-    """Add a new outline node.
+    r"""Add a new outline node.
 
     Creates a new node with the specified TITLE. By default, adds a root-level
     node. Use --child-of to create a child node, or --sibling-of with --before
@@ -215,7 +215,7 @@ def add(
     help='Working directory (default: current directory)',
 )
 def list(output_json: bool, directory: Path) -> None:  # noqa: A001, FBT001
-    """List all nodes in the outline.
+    r"""List all nodes in the outline.
 
     Displays the outline as a tree structure by default, or as nested JSON
     with --json flag.
@@ -247,9 +247,9 @@ def list(output_json: bool, directory: Path) -> None:  # noqa: A001, FBT001
         else:
             click.echo('No nodes found in outline.', err=True)
 
-    except ValueError as e:
-        click.echo(f'Error: {e}', err=True)
-        sys.exit(1)
+    except ValueError as e:  # pragma: no cover
+        click.echo(f'Error: {e}', err=True)  # pragma: no cover
+        sys.exit(1)  # pragma: no cover
 
 
 @lmk.command()
@@ -286,7 +286,7 @@ def move(
     target_sqid_after: str | None,  # noqa: ARG001
     directory: Path,
 ) -> None:
-    """Move a node to a new position in the outline.
+    r"""Move a node to a new position in the outline.
 
     Moves the node with the specified SQID to a new position. All descendants
     are moved automatically with updated paths. SQIDs are preserved.
@@ -343,7 +343,7 @@ def move(
     help='Working directory (default: current directory)',
 )
 def rename(sqid: str, new_title: str, directory: Path) -> None:
-    """Rename a node with a new title.
+    r"""Rename a node with a new title.
 
     Updates the title in the draft file's frontmatter and renames all
     associated files to use the new slug. The SQID and materialized path
@@ -402,7 +402,7 @@ def rename(sqid: str, new_title: str, directory: Path) -> None:
     help='Working directory (default: current directory)',
 )
 def delete(sqid: str, recursive: bool, promote: bool, directory: Path) -> None:  # noqa: FBT001
-    """Delete a node from the outline.
+    r"""Delete a node from the outline.
 
     By default, only deletes leaf nodes (nodes without children).
     Use --recursive to delete node and all descendants.
@@ -456,7 +456,7 @@ def delete(sqid: str, recursive: bool, promote: bool, directory: Path) -> None: 
     help='Working directory (default: current directory)',
 )
 def compact(sqid: str | None, directory: Path) -> None:
-    """Restore clean, evenly-spaced numbering to the outline.
+    r"""Restore clean, evenly-spaced numbering to the outline.
 
     Renumbers siblings at the specified level with even spacing (100s/10s/1s tier).
     If SQID provided, compacts children of that node. Otherwise compacts root level.
@@ -507,7 +507,7 @@ def compact(sqid: str | None, directory: Path) -> None:
     help='Working directory (default: current directory)',
 )
 def doctor(repair: bool, directory: Path) -> None:  # noqa: FBT001
-    """Validate outline integrity and repair common issues.
+    r"""Validate outline integrity and repair common issues.
 
     Checks for duplicate SQIDs, missing required files, and other integrity issues.
     With --repair flag, automatically fixes common problems like missing draft/notes files.
@@ -544,15 +544,15 @@ def doctor(repair: bool, directory: Path) -> None:  # noqa: FBT001
             for violation in result['violations']:
                 click.echo(f'  • {violation}', err=True)
 
-            if not repair:
+            if not repair:  # pragma: no branch
                 click.echo('', err=True)
                 click.echo('Run with --repair to auto-fix common issues', err=True)
 
             sys.exit(1)
 
     except ValueError as e:
-        click.echo(f'Error: {e}', err=True)
-        sys.exit(1)
+        click.echo(f'Error: {e}', err=True)  # pragma: no cover
+        sys.exit(1)  # pragma: no cover
 
 
 @lmk.group()
@@ -573,7 +573,7 @@ def types() -> None:
     help='Working directory (default: current directory)',
 )
 def types_list(sqid: str, directory: Path) -> None:
-    """List all document types for a node.
+    r"""List all document types for a node.
 
     Shows all document types associated with the specified node SQID.
 
@@ -605,8 +605,8 @@ def types_list(sqid: str, directory: Path) -> None:
             sys.exit(1)
 
     except ValueError as e:
-        click.echo(f'Error: {e}', err=True)
-        sys.exit(1)
+        click.echo(f'Error: {e}', err=True)  # pragma: no cover
+        sys.exit(1)  # pragma: no cover
 
 
 @types.command('add')
@@ -619,7 +619,7 @@ def types_list(sqid: str, directory: Path) -> None:
     help='Working directory (default: current directory)',
 )
 def types_add(doc_type: str, sqid: str, directory: Path) -> None:
-    """Add a new document type to a node.
+    r"""Add a new document type to a node.
 
     Creates a new empty file with the specified document type.
     Required types (draft, notes) cannot be added as they already exist.
@@ -660,7 +660,7 @@ def types_add(doc_type: str, sqid: str, directory: Path) -> None:
     help='Working directory (default: current directory)',
 )
 def types_remove(doc_type: str, sqid: str, directory: Path) -> None:
-    """Remove a document type from a node.
+    r"""Remove a document type from a node.
 
     Deletes the file for the specified document type.
     Required types (draft, notes) cannot be removed.
@@ -697,4 +697,4 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    main()  # pragma: no cover

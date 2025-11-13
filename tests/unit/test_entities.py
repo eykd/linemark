@@ -776,8 +776,12 @@ class TestOutline:
         assert updated_grandchild.mp.as_string == '200-100-100'
 
         # Check parents unchanged
-        assert outline.get_by_sqid('SQID1').mp.as_string == '100'
-        assert outline.get_by_sqid('SQID2').mp.as_string == '200'
+        parent1_node = outline.get_by_sqid('SQID1')
+        assert parent1_node is not None
+        assert parent1_node.mp.as_string == '100'
+        parent2_node = outline.get_by_sqid('SQID2')
+        assert parent2_node is not None
+        assert parent2_node.mp.as_string == '200'
 
     def test_move_node_to_root(self) -> None:
         """Move child node to root level."""
@@ -829,10 +833,18 @@ class TestOutline:
         outline.move_node('SQID2', new_mp)
 
         # Verify cascade: 300, 300-100, 300-100-100
-        assert outline.get_by_sqid('SQID2').mp.as_string == '300'
-        assert outline.get_by_sqid('SQID3').mp.as_string == '300-100'
-        assert outline.get_by_sqid('SQID4').mp.as_string == '300-100-100'
-        assert outline.get_by_sqid('SQID1').mp.as_string == '100'  # Unchanged
+        node2 = outline.get_by_sqid('SQID2')
+        assert node2 is not None
+        assert node2.mp.as_string == '300'
+        node3 = outline.get_by_sqid('SQID3')
+        assert node3 is not None
+        assert node3.mp.as_string == '300-100'
+        node4 = outline.get_by_sqid('SQID4')
+        assert node4 is not None
+        assert node4.mp.as_string == '300-100-100'
+        node1 = outline.get_by_sqid('SQID1')
+        assert node1 is not None
+        assert node1.mp.as_string == '100'  # Unchanged
 
     def test_move_node_sqid_not_found_raises_error(self) -> None:
         """Moving non-existent node raises error."""
@@ -1096,3 +1108,83 @@ class TestOutline:
         assert deleted == [node1]
         assert promoted == []
         assert 'SQID1' not in outline.nodes
+
+    def test_replace_prefix_shorter_than_old_prefix(self) -> None:
+        """Test replace_prefix when path is shorter than old_prefix."""
+        from linemark.domain.entities import MaterializedPath
+
+        path = MaterializedPath.from_string('100')
+        old_prefix = MaterializedPath.from_string('100-200')
+        new_prefix = MaterializedPath.from_string('300')
+
+        with pytest.raises(ValueError, match='does not start with prefix'):
+            path.replace_prefix(old_prefix, new_prefix)
+
+    def test_delete_node_recursive_nonexistent_node(self) -> None:
+        """Test delete_node_recursive with nonexistent SQID raises ValueError."""
+        from linemark.domain.entities import Outline
+
+        outline = Outline()
+
+        with pytest.raises(ValueError, match='not found'):
+            outline.delete_node_recursive('NONEXISTENT')
+
+    def test_delete_node_promote_nonexistent_node(self) -> None:
+        """Test delete_node_promote with nonexistent SQID raises ValueError."""
+        from linemark.domain.entities import Outline
+
+        outline = Outline()
+
+        with pytest.raises(ValueError, match='not found'):
+            outline.delete_node_promote('NONEXISTENT')
+
+    def test_delete_node_promote_child_to_parent_level(self) -> None:
+        """Test delete_node_promote promoting children to parent's level (not root)."""
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
+
+        # Create hierarchy: root -> parent -> child1, child2
+        root = Node(
+            sqid=SQID(value='ROOT'),
+            mp=MaterializedPath.from_string('100'),
+            title='Root',
+            slug='root',
+        )
+        parent = Node(
+            sqid=SQID(value='PARENT'),
+            mp=MaterializedPath.from_string('100-100'),
+            title='Parent',
+            slug='parent',
+        )
+        child1 = Node(
+            sqid=SQID(value='CHILD1'),
+            mp=MaterializedPath.from_string('100-100-100'),
+            title='Child 1',
+            slug='child-1',
+        )
+        child2 = Node(
+            sqid=SQID(value='CHILD2'),
+            mp=MaterializedPath.from_string('100-100-200'),
+            title='Child 2',
+            slug='child-2',
+        )
+
+        outline = Outline(nodes={
+            'ROOT': root,
+            'PARENT': parent,
+            'CHILD1': child1,
+            'CHILD2': child2,
+        })
+
+        # Delete parent, promote children to root's level
+        deleted, promoted = outline.delete_node_promote('PARENT')
+
+        assert deleted == [parent]
+        assert len(promoted) == 2
+
+        # Children should now be at parent's level (100-XXX instead of 100-100-XXX)
+        child1_new = outline.get_by_sqid('CHILD1')
+        child2_new = outline.get_by_sqid('CHILD2')
+        assert child1_new is not None
+        assert child2_new is not None
+        assert child1_new.mp.depth == 2  # Same level as parent was
+        assert child2_new.mp.depth == 2

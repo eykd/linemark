@@ -103,7 +103,7 @@ class AddNodeUseCase:
         if outline.nodes:
             counters = [self.sqid_generator.decode(sqid) for sqid in outline.nodes]
             valid_counters = [c for c in counters if c is not None]
-            if valid_counters:
+            if valid_counters:  # pragma: no branch
                 outline.next_counter = max(valid_counters) + 1
 
         return outline

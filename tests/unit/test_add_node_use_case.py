@@ -256,3 +256,214 @@ def test_add_node_respects_tiered_numbering() -> None:
     assert nodes[9].mp.as_string == '910'
     assert nodes[10].mp.as_string == '920'
     assert nodes[11].mp.as_string == '930'
+
+
+def test_add_node_with_nonexistent_parent_raises_error() -> None:
+    """Test adding child to nonexistent parent raises ValueError."""
+    # Arrange
+    fs = FakeFileSystem()
+    sqid_gen = FakeSQIDGenerator()
+    slugifier = FakeSlugifier()
+    directory = Path('/test')
+
+    use_case = AddNodeUseCase(
+        filesystem=fs,
+        sqid_generator=sqid_gen,
+        slugifier=slugifier,
+    )
+
+    # Act & Assert
+    import pytest
+
+    with pytest.raises(ValueError, match='Parent node with SQID NONEXISTENT not found'):
+        use_case.execute(
+            title='Child Node',
+            directory=directory,
+            parent_sqid='NONEXISTENT',
+        )
+
+
+def test_add_node_with_nonexistent_sibling_raises_error() -> None:
+    """Test adding sibling to nonexistent node raises ValueError."""
+    # Arrange
+    fs = FakeFileSystem()
+    sqid_gen = FakeSQIDGenerator()
+    slugifier = FakeSlugifier()
+    directory = Path('/test')
+
+    use_case = AddNodeUseCase(
+        filesystem=fs,
+        sqid_generator=sqid_gen,
+        slugifier=slugifier,
+    )
+
+    # Act & Assert
+    import pytest
+
+    with pytest.raises(ValueError, match='Sibling node with SQID NONEXISTENT not found'):
+        use_case.execute(
+            title='Sibling Node',
+            directory=directory,
+            sibling_sqid='NONEXISTENT',
+        )
+
+
+def test_add_node_with_malformed_frontmatter() -> None:
+    """Test loading nodes with malformed frontmatter uses 'Untitled'."""
+    # Arrange
+    fs = FakeFileSystem()
+    sqid_gen = FakeSQIDGenerator()
+    slugifier = FakeSlugifier()
+    directory = Path('/test')
+
+    # Pre-populate with malformed frontmatter files
+    # Case 1: No frontmatter start
+    fs.files[str(directory / '100_SQID1_draft_test.md')] = 'No frontmatter here'
+    fs.files[str(directory / '100_SQID1_notes_test.md')] = ''
+
+    # Case 2: Incomplete frontmatter (missing closing ---)
+    fs.files[str(directory / '200_SQID2_draft_test2.md')] = """---
+title: Test
+This is incomplete"""
+    fs.files[str(directory / '200_SQID2_notes_test2.md')] = ''
+
+    # Case 3: Frontmatter without title field
+    fs.files[str(directory / '300_SQID3_draft_test3.md')] = """---
+author: Someone
+---
+Content here"""
+    fs.files[str(directory / '300_SQID3_notes_test3.md')] = ''
+
+    use_case = AddNodeUseCase(
+        filesystem=fs,
+        sqid_generator=sqid_gen,
+        slugifier=slugifier,
+    )
+
+    # Act - add a new node which should load the existing outline
+    result = use_case.execute(title='New Node', directory=directory)
+
+    # Assert - the use case should have loaded the existing nodes
+    # We can't directly check the loaded outline, but the new node should
+    # be positioned after the existing ones (400)
+    assert result.mp.as_string == '400'
+
+
+def test_add_node_skips_non_matching_files() -> None:
+    """Test that files not matching the filename pattern are skipped."""
+    # Arrange
+    fs = FakeFileSystem()
+    sqid_gen = FakeSQIDGenerator()
+    slugifier = FakeSlugifier()
+    directory = Path('/test')
+
+    # Add a file that doesn't match the pattern
+    fs.files[str(directory / 'README.md')] = 'This is a readme'
+    fs.files[str(directory / 'invalid_file.md')] = 'Invalid format'
+
+    use_case = AddNodeUseCase(
+        filesystem=fs,
+        sqid_generator=sqid_gen,
+        slugifier=slugifier,
+    )
+
+    # Act - should not fail despite invalid files
+    result = use_case.execute(title='First Node', directory=directory)
+
+    # Assert - should create first node normally
+    assert result.mp.as_string == '100'
+
+
+def test_add_node_skips_non_draft_files_without_node() -> None:
+    """Test that non-draft files are skipped if node doesn't exist yet."""
+    # Arrange
+    fs = FakeFileSystem()
+    sqid_gen = FakeSQIDGenerator()
+    slugifier = FakeSlugifier()
+    directory = Path('/test')
+
+    # Add a notes file without a draft (orphaned notes file)
+    fs.files[str(directory / '100_SQID1_notes_test.md')] = 'Orphaned notes'
+
+    use_case = AddNodeUseCase(
+        filesystem=fs,
+        sqid_generator=sqid_gen,
+        slugifier=slugifier,
+    )
+
+    # Act - should skip the orphaned notes file
+    result = use_case.execute(title='First Node', directory=directory)
+
+    # Assert - should create node at 100 despite notes file existing
+    assert result.mp.as_string == '100'
+
+
+def test_add_node_as_sibling_at_root_level() -> None:
+    """Test adding a node as sibling to a root-level node."""
+    # Arrange
+    fs = FakeFileSystem()
+    sqid_gen = FakeSQIDGenerator()
+    slugifier = FakeSlugifier()
+    directory = Path('/test')
+
+    # Pre-populate with root node
+    fs.files[str(directory / '100_SQID1_draft_chapter-one.md')] = """---
+title: Chapter One
+---
+"""
+    fs.files[str(directory / '100_SQID1_notes_chapter-one.md')] = ''
+
+    use_case = AddNodeUseCase(
+        filesystem=fs,
+        sqid_generator=sqid_gen,
+        slugifier=slugifier,
+    )
+
+    # Act - add as sibling to root node
+    result = use_case.execute(
+        title='Chapter Two',
+        directory=directory,
+        sibling_sqid='SQID1',
+    )
+
+    # Assert - should be at root level (depth 1), position 200
+    assert result.mp.depth == 1
+    assert result.mp.as_string == '200'
+
+
+def test_add_node_as_sibling_to_child_node() -> None:
+    """Test adding a node as sibling to a non-root node."""
+    # Arrange
+    fs = FakeFileSystem()
+    sqid_gen = FakeSQIDGenerator()
+    slugifier = FakeSlugifier()
+    directory = Path('/test')
+
+    # Pre-populate with parent and child
+    fs.files[str(directory / '100_SQID1_draft_chapter-one.md')] = """---
+title: Chapter One
+---
+"""
+    fs.files[str(directory / '100_SQID1_notes_chapter-one.md')] = ''
+    fs.files[str(directory / '100-100_SQID2_draft_section-one.md')] = """---
+title: Section One
+---
+"""
+    fs.files[str(directory / '100-100_SQID2_notes_section-one.md')] = ''
+
+    use_case = AddNodeUseCase(
+        filesystem=fs,
+        sqid_generator=sqid_gen,
+        slugifier=slugifier,
+    )
+
+    # Act - add as sibling to child node (SQID2 at 100-100)
+    result = use_case.execute(
+        title='Section Two',
+        directory=directory,
+        sibling_sqid='SQID2',
+    )
+
+    # Assert - should be at same level as sibling (depth 2), next position
+    assert result.mp.depth == 2
+    assert result.mp.as_string == '100-200'

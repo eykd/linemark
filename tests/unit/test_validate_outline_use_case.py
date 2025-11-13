@@ -27,6 +27,15 @@ class FakeFileSystem:
     def file_exists(self, path: Path) -> bool:
         return str(path) in self.files
 
+    def create_directory(self, directory: Path) -> None:
+        """Create directory (no-op for fake filesystem)."""
+
+    def rename_file(self, old_path: Path, new_path: Path) -> None:
+        """Rename file."""
+        if str(old_path) in self.files:
+            self.files[str(new_path)] = self.files[str(old_path)]
+            del self.files[str(old_path)]
+
 
 def test_validate_clean_outline() -> None:
     """Test validating an outline with no issues."""
