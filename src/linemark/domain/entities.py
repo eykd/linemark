@@ -100,12 +100,12 @@ class MaterializedPath(BaseModel):
             msg = f'Path {self.as_string} does not start with prefix {old_prefix.as_string}'
             raise ValueError(msg)
 
-        if self.segments[:len(old_prefix.segments)] != old_prefix.segments:
+        if self.segments[: len(old_prefix.segments)] != old_prefix.segments:
             msg = f'Path {self.as_string} does not start with prefix {old_prefix.as_string}'
             raise ValueError(msg)
 
         # Replace prefix: new_prefix + remaining segments
-        remaining_segments = self.segments[len(old_prefix.segments):]
+        remaining_segments = self.segments[len(old_prefix.segments) :]
         return MaterializedPath(segments=(*new_prefix.segments, *remaining_segments))
 
 
@@ -275,7 +275,11 @@ class Outline(BaseModel):
             violations.append('Duplicate materialized paths detected')
 
         # Check required document types
-        violations.extend(f'Node {node.sqid.value} missing required types' for node in self.nodes.values() if not node.validate_required_types())
+        violations.extend(
+            f'Node {node.sqid.value} missing required types'
+            for node in self.nodes.values()
+            if not node.validate_required_types()
+        )
 
         return violations
 
@@ -363,9 +367,9 @@ class Outline(BaseModel):
         # Find all descendants (nodes with MP starting with this node's MP)
         old_mp = node.mp
         descendants = [
-            n for n in self.nodes.values()
-            if len(n.mp.segments) > len(old_mp.segments) and
-            n.mp.segments[:len(old_mp.segments)] == old_mp.segments
+            n
+            for n in self.nodes.values()
+            if len(n.mp.segments) > len(old_mp.segments) and n.mp.segments[: len(old_mp.segments)] == old_mp.segments
         ]
 
         # Update node's materialized path

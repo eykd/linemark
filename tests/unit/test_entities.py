@@ -121,8 +121,7 @@ class TestMaterializedPath:
         # Move from 100 to 200 (root level)
         mp = MaterializedPath.from_string('100')
         new_mp = mp.replace_prefix(
-            old_prefix=MaterializedPath.from_string('100'),
-            new_prefix=MaterializedPath.from_string('200')
+            old_prefix=MaterializedPath.from_string('100'), new_prefix=MaterializedPath.from_string('200')
         )
 
         assert new_mp.as_string == '200'
@@ -134,8 +133,7 @@ class TestMaterializedPath:
         # Move 100-050 to 200-050 (move parent from 100 to 200)
         mp = MaterializedPath.from_string('100-050')
         new_mp = mp.replace_prefix(
-            old_prefix=MaterializedPath.from_string('100'),
-            new_prefix=MaterializedPath.from_string('200')
+            old_prefix=MaterializedPath.from_string('100'), new_prefix=MaterializedPath.from_string('200')
         )
 
         assert new_mp.as_string == '200-050'
@@ -147,8 +145,7 @@ class TestMaterializedPath:
         # Move 100-050-025-010 to 300-050-025-010
         mp = MaterializedPath.from_string('100-050-025-010')
         new_mp = mp.replace_prefix(
-            old_prefix=MaterializedPath.from_string('100'),
-            new_prefix=MaterializedPath.from_string('300')
+            old_prefix=MaterializedPath.from_string('100'), new_prefix=MaterializedPath.from_string('300')
         )
 
         assert new_mp.as_string == '300-050-025-010'
@@ -160,8 +157,7 @@ class TestMaterializedPath:
         # Move 100-050-025 to 100-200-025 (move 100-050 to 100-200)
         mp = MaterializedPath.from_string('100-050-025')
         new_mp = mp.replace_prefix(
-            old_prefix=MaterializedPath.from_string('100-050'),
-            new_prefix=MaterializedPath.from_string('100-200')
+            old_prefix=MaterializedPath.from_string('100-050'), new_prefix=MaterializedPath.from_string('100-200')
         )
 
         assert new_mp.as_string == '100-200-025'
@@ -174,8 +170,7 @@ class TestMaterializedPath:
 
         with pytest.raises(ValueError, match='Path .* does not start with prefix'):
             mp.replace_prefix(
-                old_prefix=MaterializedPath.from_string('200'),
-                new_prefix=MaterializedPath.from_string('300')
+                old_prefix=MaterializedPath.from_string('200'), new_prefix=MaterializedPath.from_string('300')
             )
 
 
@@ -757,12 +752,14 @@ class TestOutline:
             slug='grandchild',
         )
 
-        outline = Outline(nodes={
-            'SQID1': parent1,
-            'SQID2': parent2,
-            'SQID3': child,
-            'SQID4': grandchild,
-        })
+        outline = Outline(
+            nodes={
+                'SQID1': parent1,
+                'SQID2': parent2,
+                'SQID3': child,
+                'SQID4': grandchild,
+            }
+        )
 
         # Move child from parent1 (100) to parent2 (200)
         new_mp = MaterializedPath.from_string('200-100')
@@ -816,14 +813,14 @@ class TestOutline:
 
         # Create tree: 100 -> 100-100 -> 100-100-100 -> 100-100-100-100
         nodes = {
-            'SQID1': Node(sqid=SQID(value='SQID1'), mp=MaterializedPath.from_string('100'),
-                          title='L1', slug='l1'),
-            'SQID2': Node(sqid=SQID(value='SQID2'), mp=MaterializedPath.from_string('100-100'),
-                          title='L2', slug='l2'),
-            'SQID3': Node(sqid=SQID(value='SQID3'), mp=MaterializedPath.from_string('100-100-100'),
-                          title='L3', slug='l3'),
-            'SQID4': Node(sqid=SQID(value='SQID4'), mp=MaterializedPath.from_string('100-100-100-100'),
-                          title='L4', slug='l4'),
+            'SQID1': Node(sqid=SQID(value='SQID1'), mp=MaterializedPath.from_string('100'), title='L1', slug='l1'),
+            'SQID2': Node(sqid=SQID(value='SQID2'), mp=MaterializedPath.from_string('100-100'), title='L2', slug='l2'),
+            'SQID3': Node(
+                sqid=SQID(value='SQID3'), mp=MaterializedPath.from_string('100-100-100'), title='L3', slug='l3'
+            ),
+            'SQID4': Node(
+                sqid=SQID(value='SQID4'), mp=MaterializedPath.from_string('100-100-100-100'), title='L4', slug='l4'
+            ),
         }
         outline = Outline(nodes=nodes)
 

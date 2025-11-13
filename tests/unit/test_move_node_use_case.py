@@ -33,11 +33,7 @@ class FakeFileSystem:
 
     def list_markdown_files(self, directory: Path) -> list[Path]:
         """List markdown files in directory."""
-        return [
-            Path(path)
-            for path in self.files
-            if path.endswith('.md') and path.startswith(str(directory))
-        ]
+        return [Path(path) for path in self.files if path.endswith('.md') and path.startswith(str(directory))]
 
     def file_exists(self, path: Path) -> bool:
         """Check if file exists in in-memory storage."""

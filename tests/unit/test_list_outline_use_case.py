@@ -19,11 +19,7 @@ class FakeFileSystem:
 
     def list_markdown_files(self, directory: Path) -> list[Path]:
         """List markdown files in directory."""
-        return [
-            Path(path)
-            for path in self.files
-            if path.endswith('.md') and path.startswith(str(directory))
-        ]
+        return [Path(path) for path in self.files if path.endswith('.md') and path.startswith(str(directory))]
 
 
 def test_list_outline_returns_empty_for_empty_directory() -> None:

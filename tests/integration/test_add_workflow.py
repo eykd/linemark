@@ -141,11 +141,15 @@ def test_add_multiple_levels(tmp_path: Path) -> None:
         sqid1 = result1.output.split('@')[1].split(')')[0]
 
         # Add child
-        result2 = runner.invoke(lmk, ['add', 'Section 1.1', '--child-of', f'@{sqid1}', '--directory', str(isolated_dir)])
+        result2 = runner.invoke(
+            lmk, ['add', 'Section 1.1', '--child-of', f'@{sqid1}', '--directory', str(isolated_dir)]
+        )
         sqid2 = result2.output.split('@')[1].split(')')[0]
 
         # Add grandchild
-        result3 = runner.invoke(lmk, ['add', 'Subsection 1.1.1', '--child-of', f'@{sqid2}', '--directory', str(isolated_dir)])
+        result3 = runner.invoke(
+            lmk, ['add', 'Subsection 1.1.1', '--child-of', f'@{sqid2}', '--directory', str(isolated_dir)]
+        )
         assert result3.exit_code == 0
 
         # Verify hierarchy in list

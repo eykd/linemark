@@ -103,9 +103,7 @@ class TestSlugifierPortContract:
 
         assert result == 'chapter-42-section-3'
 
-    def test_slugify_handles_consecutive_punctuation(
-        self, slugifier: SlugifierPort
-    ) -> None:
+    def test_slugify_handles_consecutive_punctuation(self, slugifier: SlugifierPort) -> None:
         """Consecutive punctuation becomes single hyphen."""
         result = slugifier.slugify('Chapter... One!!!')
 

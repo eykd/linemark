@@ -22,7 +22,9 @@ def test_move_node_to_root(tmp_path: Path) -> None:
         sqid_parent = result1.output.split('@')[1].split(')')[0]
 
         # Add child
-        result2 = runner.invoke(lmk, ['add', 'Child', '--child-of', f'@{sqid_parent}', '--directory', str(isolated_dir)])
+        result2 = runner.invoke(
+            lmk, ['add', 'Child', '--child-of', f'@{sqid_parent}', '--directory', str(isolated_dir)]
+        )
         assert result2.exit_code == 0
 
         # Extract child SQID
@@ -54,7 +56,9 @@ def test_move_node_to_new_parent(tmp_path: Path) -> None:
         assert result2.exit_code == 0
 
         # Add child to parent1
-        result3 = runner.invoke(lmk, ['add', 'Child', '--child-of', f'@{sqid_parent1}', '--directory', str(isolated_dir)])
+        result3 = runner.invoke(
+            lmk, ['add', 'Child', '--child-of', f'@{sqid_parent1}', '--directory', str(isolated_dir)]
+        )
         assert result3.exit_code == 0
         sqid_child = result3.output.split('@')[1].split(')')[0]
 
@@ -79,12 +83,16 @@ def test_move_node_with_descendants_cascades(tmp_path: Path) -> None:
         sqid_parent = result1.output.split('@')[1].split(')')[0]
 
         # Add child
-        result2 = runner.invoke(lmk, ['add', 'Child', '--child-of', f'@{sqid_parent}', '--directory', str(isolated_dir)])
+        result2 = runner.invoke(
+            lmk, ['add', 'Child', '--child-of', f'@{sqid_parent}', '--directory', str(isolated_dir)]
+        )
         assert result2.exit_code == 0
         sqid_child = result2.output.split('@')[1].split(')')[0]
 
         # Add grandchild
-        result3 = runner.invoke(lmk, ['add', 'Grandchild', '--child-of', f'@{sqid_child}', '--directory', str(isolated_dir)])
+        result3 = runner.invoke(
+            lmk, ['add', 'Grandchild', '--child-of', f'@{sqid_child}', '--directory', str(isolated_dir)]
+        )
         assert result3.exit_code == 0
         sqid_grandchild = result3.output.split('@')[1].split(')')[0]
 
@@ -159,7 +167,9 @@ def test_move_and_list_workflow(tmp_path: Path) -> None:
         result2 = runner.invoke(lmk, ['add', 'Chapter Two', '--directory', str(isolated_dir)])
         assert result2.exit_code == 0
 
-        result3 = runner.invoke(lmk, ['add', 'Section 1.1', '--child-of', f'@{sqid1}', '--directory', str(isolated_dir)])
+        result3 = runner.invoke(
+            lmk, ['add', 'Section 1.1', '--child-of', f'@{sqid1}', '--directory', str(isolated_dir)]
+        )
         assert result3.exit_code == 0
         sqid_child = result3.output.split('@')[1].split(')')[0]
 

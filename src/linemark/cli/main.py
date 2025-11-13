@@ -15,6 +15,7 @@ from linemark.use_cases.add_node import AddNodeUseCase
 from linemark.use_cases.list_outline import ListOutlineUseCase
 from linemark.use_cases.manage_types import ManageTypesUseCase
 from linemark.use_cases.move_node import MoveNodeUseCase
+from linemark.use_cases.rename_node import RenameNodeUseCase
 
 
 @click.group()
@@ -241,6 +242,53 @@ def move(
         # Output success message
         click.echo(f'Moved node @{sqid_clean} to {target_mp_clean}')
         click.echo('All files renamed successfully')
+
+    except ValueError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+
+
+@lmk.command()
+@click.argument('sqid')
+@click.argument('new_title')
+@click.option(
+    '--directory',
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=Path.cwd(),
+    help='Working directory (default: current directory)',
+)
+def rename(sqid: str, new_title: str, directory: Path) -> None:
+    r"""Rename a node with a new title.
+
+    Updates the title in the draft file's frontmatter and renames all
+    associated files to use the new slug. The SQID and materialized path
+    remain unchanged.
+
+    Examples:
+        \b
+        # Rename a node
+        lmk rename @SQID1 "New Chapter Title"
+
+        \b
+        # Works with special characters
+        lmk rename @SQID1 "Chapter 2: Hero's Journey"
+
+    """
+    try:
+        # Strip @ prefix if provided
+        sqid_clean = sqid.lstrip('@')
+
+        # Create adapters
+        filesystem = FileSystemAdapter()
+        slugifier = SlugifierAdapter()
+
+        # Execute use case
+        use_case = RenameNodeUseCase(filesystem=filesystem, slugifier=slugifier)
+        use_case.execute(sqid=sqid_clean, new_title=new_title, directory=directory)
+
+        # Output success message
+        click.echo(f'Renamed node @{sqid_clean} to "{new_title}"')
+        click.echo('All files updated successfully')
 
     except ValueError as e:
         click.echo(f'Error: {e}', err=True)

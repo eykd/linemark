@@ -209,16 +209,16 @@ This document provides a complete, executable task breakdown for implementing Li
 
 ### Use Case Implementation
 
-- [ ] T057 [P] [US4] Write unit test for RenameNodeUseCase in tests/unit/test_rename_node_use_case.py
-- [ ] T058 [US4] Implement RenameNodeUseCase in src/linemark/use_cases/rename_node.py updating frontmatter and renaming all document type files
+- [X] T057 [P] [US4] Write unit test for RenameNodeUseCase in tests/unit/test_rename_node_use_case.py
+- [X] T058 [US4] Implement RenameNodeUseCase in src/linemark/use_cases/rename_node.py updating frontmatter and renaming all document type files
 
 ### CLI Implementation
 
-- [ ] T059 [US4] Implement `lmk rename` command in src/linemark/cli/main.py with SQID/MP selector and new title
+- [X] T059 [US4] Implement `lmk rename` command in src/linemark/cli/main.py with SQID/MP selector and new title
 
 ### Integration Test
 
-- [ ] T060 [US4] Write integration test in tests/integration/test_rename_workflow.py verifying rename with special characters and multiple document types
+- [X] T060 [US4] Write integration test in tests/integration/test_rename_workflow.py verifying rename with special characters and multiple document types
 
 **Story 4 Validation**: Run integration test. User should be able to rename nodes and see updated filenames.
 

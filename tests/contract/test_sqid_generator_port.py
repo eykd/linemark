@@ -50,9 +50,7 @@ class TestSQIDGeneratorPortContract:
 
         assert sqid.isalnum()
 
-    def test_encode_different_counters_produce_different_sqids(
-        self, sqid_generator: SQIDGeneratorPort
-    ) -> None:
+    def test_encode_different_counters_produce_different_sqids(self, sqid_generator: SQIDGeneratorPort) -> None:
         """Different counters produce different SQIDs."""
         sqid1 = sqid_generator.encode(1)
         sqid2 = sqid_generator.encode(2)
@@ -62,9 +60,7 @@ class TestSQIDGeneratorPortContract:
         assert sqid1 != sqid100
         assert sqid2 != sqid100
 
-    def test_encode_negative_counter_raises_error(
-        self, sqid_generator: SQIDGeneratorPort
-    ) -> None:
+    def test_encode_negative_counter_raises_error(self, sqid_generator: SQIDGeneratorPort) -> None:
         """Encoding negative counter raises ValueError."""
         with pytest.raises(ValueError):
             sqid_generator.encode(-1)
@@ -77,9 +73,7 @@ class TestSQIDGeneratorPortContract:
         assert len(sqid) > 0
         assert sqid.isalnum()
 
-    def test_decode_valid_sqid_returns_counter(
-        self, sqid_generator: SQIDGeneratorPort
-    ) -> None:
+    def test_decode_valid_sqid_returns_counter(self, sqid_generator: SQIDGeneratorPort) -> None:
         """Decode valid SQID returns original counter."""
         original_counter = 42
         sqid = sqid_generator.encode(original_counter)
@@ -88,9 +82,7 @@ class TestSQIDGeneratorPortContract:
 
         assert decoded == original_counter
 
-    def test_decode_invalid_sqid_returns_none(
-        self, sqid_generator: SQIDGeneratorPort
-    ) -> None:
+    def test_decode_invalid_sqid_returns_none(self, sqid_generator: SQIDGeneratorPort) -> None:
         """Decode invalid SQID returns None."""
         invalid_sqids = ['!!!invalid!!!', 'not-a-sqid', '', '   ']
 

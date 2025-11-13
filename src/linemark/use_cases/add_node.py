@@ -101,10 +101,7 @@ class AddNodeUseCase:
 
         # Derive next counter from existing SQIDs
         if outline.nodes:
-            counters = [
-                self.sqid_generator.decode(sqid)
-                for sqid in outline.nodes
-            ]
+            counters = [self.sqid_generator.decode(sqid) for sqid in outline.nodes]
             valid_counters = [c for c in counters if c is not None]
             if valid_counters:
                 outline.next_counter = max(valid_counters) + 1

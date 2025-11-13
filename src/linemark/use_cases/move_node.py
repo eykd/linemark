@@ -152,7 +152,9 @@ class MoveNodeUseCase:
         outline.move_node(sqid, new_mp)
 
         # Collect all nodes that were affected (node + descendants)
-        affected_nodes = [n for n in outline.nodes.values() if n.sqid.value == sqid or self._is_descendant_of(n, new_mp)]
+        affected_nodes = [
+            n for n in outline.nodes.values() if n.sqid.value == sqid or self._is_descendant_of(n, new_mp)
+        ]
 
         # Rename files for all affected nodes
         for affected_node in affected_nodes:
@@ -187,6 +189,6 @@ class MoveNodeUseCase:
         """
         # Node is descendant if its MP starts with ancestor_mp and is longer
         return (
-            len(node.mp.segments) > len(ancestor_mp.segments) and
-            node.mp.segments[:len(ancestor_mp.segments)] == ancestor_mp.segments
+            len(node.mp.segments) > len(ancestor_mp.segments)
+            and node.mp.segments[: len(ancestor_mp.segments)] == ancestor_mp.segments
         )
