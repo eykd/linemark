@@ -23,6 +23,9 @@ class TestFileSystemPortContract:
     and provides a filesystem_port fixture.
     """
 
+    # Mark as non-collection to avoid pytest discovering this base class
+    __test__ = False
+
     def test_write_and_read_file(self, filesystem_port: FileSystemPort, tmp_path: Path) -> None:
         """Write a file and read it back."""
         filepath = tmp_path / 'test.md'

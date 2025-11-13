@@ -21,6 +21,9 @@ class TestSlugifierPortContract:
     and provides a slugifier fixture.
     """
 
+    # Mark as non-collection to avoid pytest discovering this base class
+    __test__ = False
+
     def test_slugify_simple_text(self, slugifier: SlugifierPort) -> None:
         """Slugify simple text with spaces."""
         result = slugifier.slugify('Chapter One')

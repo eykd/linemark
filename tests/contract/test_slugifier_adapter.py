@@ -17,4 +17,7 @@ def slugifier() -> SlugifierAdapter:
 class TestSlugifierAdapter(TestSlugifierPortContract):
     """Test SlugifierAdapter against SlugifierPort contract."""
 
+    # Enable test collection for this subclass
+    __test__ = True
+
     # All tests inherited from TestSlugifierPortContract

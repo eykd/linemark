@@ -17,4 +17,7 @@ def filesystem_port() -> FileSystemAdapter:
 class TestFileSystemAdapter(TestFileSystemPortContract):
     """Test FileSystemAdapter against FileSystemPort contract."""
 
+    # Enable test collection for this subclass
+    __test__ = True
+
     # All tests inherited from TestFileSystemPortContract

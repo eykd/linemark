@@ -112,7 +112,7 @@ def format_json(nodes: list[Node]) -> str:
     import json
     from typing import Any
 
-    from linemark.domain.entities import MaterializedPath
+    from linemark.domain.entities import MaterializedPath  # noqa: TC001
 
     def build_tree(parent_mp: MaterializedPath | None) -> list[dict[str, Any]]:
         """Recursively build tree structure."""

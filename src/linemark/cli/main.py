@@ -13,6 +13,7 @@ from linemark.adapters.sqid_generator import SQIDGeneratorAdapter
 from linemark.cli.formatters import format_json, format_tree
 from linemark.use_cases.add_node import AddNodeUseCase
 from linemark.use_cases.list_outline import ListOutlineUseCase
+from linemark.use_cases.move_node import MoveNodeUseCase
 
 
 @click.group()
@@ -159,6 +160,86 @@ def list(output_json: bool, directory: Path) -> None:  # noqa: A001, FBT001
             click.echo(output)
         else:
             click.echo('No nodes found in outline.', err=True)
+
+    except ValueError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+
+
+@lmk.command()
+@click.argument('sqid')
+@click.option(
+    '--to',
+    'target_mp',
+    required=True,
+    help='Target materialized path (e.g., 200-100) or parent SQID with @',
+    metavar='PATH',
+)
+@click.option(
+    '--before',
+    'target_sqid_before',
+    help='Insert before this SQID (requires --to to be parent)',
+    metavar='SQID',
+)
+@click.option(
+    '--after',
+    'target_sqid_after',
+    help='Insert after this SQID (requires --to to be parent)',
+    metavar='SQID',
+)
+@click.option(
+    '--directory',
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=Path.cwd(),
+    help='Working directory (default: current directory)',
+)
+def move(
+    sqid: str,
+    target_mp: str,
+    target_sqid_before: str | None,  # noqa: ARG001
+    target_sqid_after: str | None,  # noqa: ARG001
+    directory: Path,
+) -> None:
+    r"""Move a node to a new position in the outline.
+
+    Moves the node with the specified SQID to a new position. All descendants
+    are moved automatically with updated paths. SQIDs are preserved.
+
+    Examples:
+        \b
+        # Move node to root level at position 200
+        lmk move @SQID1 --to 200
+
+        \b
+        # Move node to be child of another node
+        lmk move @SQID2 --to 100-200
+
+        \b
+        # Move node before another sibling (future)
+        lmk move @SQID3 --to @SQID4 --before
+
+    """
+    try:
+        # Strip @ prefix if provided
+        sqid_clean = sqid.lstrip('@')
+
+        # Target is materialized path string
+        target_mp_clean = target_mp
+
+        # Create adapter
+        filesystem = FileSystemAdapter()
+
+        # Execute use case
+        use_case = MoveNodeUseCase(filesystem=filesystem)
+        use_case.execute(
+            sqid=sqid_clean,
+            new_mp_str=target_mp_clean,
+            directory=directory,
+        )
+
+        # Output success message
+        click.echo(f'Moved node @{sqid_clean} to {target_mp_clean}')
+        click.echo('All files renamed successfully')
 
     except ValueError as e:
         click.echo(f'Error: {e}', err=True)

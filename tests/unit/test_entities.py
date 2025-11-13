@@ -114,6 +114,70 @@ class TestMaterializedPath:
         assert child.as_string == '001-100-050'
         assert child.depth == 3
 
+    def test_replace_prefix_single_level(self) -> None:
+        """Replace prefix at root level."""
+        from linemark.domain.entities import MaterializedPath
+
+        # Move from 100 to 200 (root level)
+        mp = MaterializedPath.from_string('100')
+        new_mp = mp.replace_prefix(
+            old_prefix=MaterializedPath.from_string('100'),
+            new_prefix=MaterializedPath.from_string('200')
+        )
+
+        assert new_mp.as_string == '200'
+
+    def test_replace_prefix_nested(self) -> None:
+        """Replace prefix in nested path."""
+        from linemark.domain.entities import MaterializedPath
+
+        # Move 100-050 to 200-050 (move parent from 100 to 200)
+        mp = MaterializedPath.from_string('100-050')
+        new_mp = mp.replace_prefix(
+            old_prefix=MaterializedPath.from_string('100'),
+            new_prefix=MaterializedPath.from_string('200')
+        )
+
+        assert new_mp.as_string == '200-050'
+
+    def test_replace_prefix_deep_hierarchy(self) -> None:
+        """Replace prefix deep in hierarchy."""
+        from linemark.domain.entities import MaterializedPath
+
+        # Move 100-050-025-010 to 300-050-025-010
+        mp = MaterializedPath.from_string('100-050-025-010')
+        new_mp = mp.replace_prefix(
+            old_prefix=MaterializedPath.from_string('100'),
+            new_prefix=MaterializedPath.from_string('300')
+        )
+
+        assert new_mp.as_string == '300-050-025-010'
+
+    def test_replace_prefix_mid_hierarchy(self) -> None:
+        """Replace prefix in middle of hierarchy."""
+        from linemark.domain.entities import MaterializedPath
+
+        # Move 100-050-025 to 100-200-025 (move 100-050 to 100-200)
+        mp = MaterializedPath.from_string('100-050-025')
+        new_mp = mp.replace_prefix(
+            old_prefix=MaterializedPath.from_string('100-050'),
+            new_prefix=MaterializedPath.from_string('100-200')
+        )
+
+        assert new_mp.as_string == '100-200-025'
+
+    def test_replace_prefix_no_match_raises_error(self) -> None:
+        """Raise error if prefix doesn't match."""
+        from linemark.domain.entities import MaterializedPath
+
+        mp = MaterializedPath.from_string('100-050')
+
+        with pytest.raises(ValueError, match='Path .* does not start with prefix'):
+            mp.replace_prefix(
+                old_prefix=MaterializedPath.from_string('200'),
+                new_prefix=MaterializedPath.from_string('300')
+            )
+
 
 class TestSQID:
     """Test suite for SQID value object."""
@@ -662,3 +726,145 @@ class TestOutline:
 
         with pytest.raises(ValueError, match='Materialized path .* already exists'):
             outline.add_node(node2)
+
+    def test_move_node_to_new_parent(self) -> None:
+        """Move node to new parent updates MP for node and descendants."""
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
+
+        # Create outline: 100 (parent1), 200 (parent2), 100-100 (child of parent1)
+        parent1 = Node(
+            sqid=SQID(value='SQID1'),
+            mp=MaterializedPath.from_string('100'),
+            title='Parent One',
+            slug='parent-one',
+        )
+        parent2 = Node(
+            sqid=SQID(value='SQID2'),
+            mp=MaterializedPath.from_string('200'),
+            title='Parent Two',
+            slug='parent-two',
+        )
+        child = Node(
+            sqid=SQID(value='SQID3'),
+            mp=MaterializedPath.from_string('100-100'),
+            title='Child',
+            slug='child',
+        )
+        grandchild = Node(
+            sqid=SQID(value='SQID4'),
+            mp=MaterializedPath.from_string('100-100-100'),
+            title='Grandchild',
+            slug='grandchild',
+        )
+
+        outline = Outline(nodes={
+            'SQID1': parent1,
+            'SQID2': parent2,
+            'SQID3': child,
+            'SQID4': grandchild,
+        })
+
+        # Move child from parent1 (100) to parent2 (200)
+        new_mp = MaterializedPath.from_string('200-100')
+        outline.move_node('SQID3', new_mp)
+
+        # Check child MP updated
+        updated_child = outline.get_by_sqid('SQID3')
+        assert updated_child is not None
+        assert updated_child.mp.as_string == '200-100'
+
+        # Check grandchild MP cascaded
+        updated_grandchild = outline.get_by_sqid('SQID4')
+        assert updated_grandchild is not None
+        assert updated_grandchild.mp.as_string == '200-100-100'
+
+        # Check parents unchanged
+        assert outline.get_by_sqid('SQID1').mp.as_string == '100'
+        assert outline.get_by_sqid('SQID2').mp.as_string == '200'
+
+    def test_move_node_to_root(self) -> None:
+        """Move child node to root level."""
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
+
+        parent = Node(
+            sqid=SQID(value='SQID1'),
+            mp=MaterializedPath.from_string('100'),
+            title='Parent',
+            slug='parent',
+        )
+        child = Node(
+            sqid=SQID(value='SQID2'),
+            mp=MaterializedPath.from_string('100-100'),
+            title='Child',
+            slug='child',
+        )
+
+        outline = Outline(nodes={'SQID1': parent, 'SQID2': child})
+
+        # Move child to root
+        new_mp = MaterializedPath.from_string('200')
+        outline.move_node('SQID2', new_mp)
+
+        updated_child = outline.get_by_sqid('SQID2')
+        assert updated_child is not None
+        assert updated_child.mp.as_string == '200'
+        assert updated_child.mp.depth == 1
+
+    def test_move_node_with_deep_descendants(self) -> None:
+        """Move node with 3+ levels of descendants."""
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
+
+        # Create tree: 100 -> 100-100 -> 100-100-100 -> 100-100-100-100
+        nodes = {
+            'SQID1': Node(sqid=SQID(value='SQID1'), mp=MaterializedPath.from_string('100'),
+                          title='L1', slug='l1'),
+            'SQID2': Node(sqid=SQID(value='SQID2'), mp=MaterializedPath.from_string('100-100'),
+                          title='L2', slug='l2'),
+            'SQID3': Node(sqid=SQID(value='SQID3'), mp=MaterializedPath.from_string('100-100-100'),
+                          title='L3', slug='l3'),
+            'SQID4': Node(sqid=SQID(value='SQID4'), mp=MaterializedPath.from_string('100-100-100-100'),
+                          title='L4', slug='l4'),
+        }
+        outline = Outline(nodes=nodes)
+
+        # Move L2 (100-100) to root as 300
+        new_mp = MaterializedPath.from_string('300')
+        outline.move_node('SQID2', new_mp)
+
+        # Verify cascade: 300, 300-100, 300-100-100
+        assert outline.get_by_sqid('SQID2').mp.as_string == '300'
+        assert outline.get_by_sqid('SQID3').mp.as_string == '300-100'
+        assert outline.get_by_sqid('SQID4').mp.as_string == '300-100-100'
+        assert outline.get_by_sqid('SQID1').mp.as_string == '100'  # Unchanged
+
+    def test_move_node_sqid_not_found_raises_error(self) -> None:
+        """Moving non-existent node raises error."""
+        from linemark.domain.entities import MaterializedPath, Outline
+
+        outline = Outline()
+
+        with pytest.raises(ValueError, match='Node with SQID .* not found'):
+            outline.move_node('MISSING', MaterializedPath.from_string('200'))
+
+    def test_move_node_target_position_already_exists_raises_error(self) -> None:
+        """Moving to existing MP raises error."""
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
+
+        node1 = Node(
+            sqid=SQID(value='SQID1'),
+            mp=MaterializedPath.from_string('100'),
+            title='Node One',
+            slug='node-one',
+        )
+        node2 = Node(
+            sqid=SQID(value='SQID2'),
+            mp=MaterializedPath.from_string('200'),
+            title='Node Two',
+            slug='node-two',
+        )
+
+        outline = Outline(nodes={'SQID1': node1, 'SQID2': node2})
+
+        # Try to move node1 to node2's position
+        with pytest.raises(ValueError, match='Target path .* already occupied'):
+            outline.move_node('SQID1', MaterializedPath.from_string('200'))

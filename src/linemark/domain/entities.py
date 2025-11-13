@@ -77,6 +77,37 @@ class MaterializedPath(BaseModel):
         """Create child path at given position."""
         return MaterializedPath(segments=(*self.segments, position))
 
+    def replace_prefix(
+        self,
+        old_prefix: MaterializedPath,
+        new_prefix: MaterializedPath,
+    ) -> MaterializedPath:
+        """Replace prefix in this path for move operations.
+
+        Args:
+            old_prefix: Prefix to replace (e.g., '100')
+            new_prefix: New prefix (e.g., '200')
+
+        Returns:
+            New path with prefix replaced
+
+        Raises:
+            ValueError: If this path doesn't start with old_prefix
+
+        """
+        # Check if path starts with old_prefix
+        if len(self.segments) < len(old_prefix.segments):
+            msg = f'Path {self.as_string} does not start with prefix {old_prefix.as_string}'
+            raise ValueError(msg)
+
+        if self.segments[:len(old_prefix.segments)] != old_prefix.segments:
+            msg = f'Path {self.as_string} does not start with prefix {old_prefix.as_string}'
+            raise ValueError(msg)
+
+        # Replace prefix: new_prefix + remaining segments
+        remaining_segments = self.segments[len(old_prefix.segments):]
+        return MaterializedPath(segments=(*new_prefix.segments, *remaining_segments))
+
 
 class SQID(BaseModel):
     """SQID value object (URL-safe short identifier).
@@ -305,3 +336,41 @@ class Outline(BaseModel):
 
         # Increment counter
         self.next_counter += 1
+
+    def move_node(self, sqid: SQID | str, new_mp: MaterializedPath) -> None:
+        """Move node to new position, cascading to all descendants.
+
+        Args:
+            sqid: SQID of node to move
+            new_mp: New materialized path for the node
+
+        Raises:
+            ValueError: If node not found or target position occupied
+
+        """
+        # Find node to move
+        sqid_str = sqid.value if isinstance(sqid, SQID) else sqid
+        node = self.get_by_sqid(sqid_str)
+        if node is None:
+            msg = f'Node with SQID {sqid_str} not found'
+            raise ValueError(msg)
+
+        # Check if target position is available (unless moving to own position)
+        if new_mp != node.mp and any(n.mp == new_mp for n in self.nodes.values()):
+            msg = f'Target path {new_mp.as_string} already occupied'
+            raise ValueError(msg)
+
+        # Find all descendants (nodes with MP starting with this node's MP)
+        old_mp = node.mp
+        descendants = [
+            n for n in self.nodes.values()
+            if len(n.mp.segments) > len(old_mp.segments) and
+            n.mp.segments[:len(old_mp.segments)] == old_mp.segments
+        ]
+
+        # Update node's materialized path
+        node.mp = new_mp
+
+        # Cascade update to descendants
+        for desc in descendants:
+            desc.mp = desc.mp.replace_prefix(old_mp, new_mp)

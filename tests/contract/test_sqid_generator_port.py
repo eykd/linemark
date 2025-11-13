@@ -21,6 +21,9 @@ class TestSQIDGeneratorPortContract:
     and provides a sqid_generator fixture.
     """
 
+    # Mark as non-collection to avoid pytest discovering this base class
+    __test__ = False
+
     def test_encode_positive_integers(self, sqid_generator: SQIDGeneratorPort) -> None:
         """Encode positive integers to SQID strings."""
         sqid1 = sqid_generator.encode(1)

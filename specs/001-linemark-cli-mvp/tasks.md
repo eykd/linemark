@@ -144,22 +144,22 @@ This document provides a complete, executable task breakdown for implementing Li
 
 ### Domain Logic for Move Operations
 
-- [ ] T042 [P] [US2] Write test for MaterializedPath prefix replacement in tests/unit/test_entities.py
-- [ ] T043 [P] [US2] Write test for Outline.move_node() in tests/unit/test_outline.py
-- [ ] T044 [US2] Implement Outline.move_node() in src/linemark/domain/entities.py updating MPs for node and descendants
+- [X] T042 [P] [US2] Write test for MaterializedPath prefix replacement in tests/unit/test_entities.py
+- [X] T043 [P] [US2] Write test for Outline.move_node() in tests/unit/test_outline.py
+- [X] T044 [US2] Implement Outline.move_node() in src/linemark/domain/entities.py updating MPs for node and descendants
 
 ### Use Case Implementation
 
-- [ ] T045 [US2] Write unit test for MoveNodeUseCase with fake adapters in tests/unit/test_move_node_use_case.py
-- [ ] T046 [US2] Implement MoveNodeUseCase in src/linemark/use_cases/move_node.py with batch atomic rename per research.md R7
+- [X] T045 [US2] Write unit test for MoveNodeUseCase with fake adapters in tests/unit/test_move_node_use_case.py
+- [X] T046 [US2] Implement MoveNodeUseCase in src/linemark/use_cases/move_node.py with batch atomic rename per research.md R7
 
 ### CLI Implementation
 
-- [ ] T047 [US2] Implement `lmk move` command in src/linemark/cli/main.py with --to, --before, --after, --directory options
+- [X] T047 [US2] Implement `lmk move` command in src/linemark/cli/main.py with --to, --before, --after, --directory options
 
 ### Integration Test
 
-- [ ] T048 [US2] Write integration test in tests/integration/test_move_workflow.py verifying node move with 10+ descendants preserves data and hierarchy
+- [X] T048 [US2] Write integration test in tests/integration/test_move_workflow.py verifying node move with 10+ descendants preserves data and hierarchy
 
 **Story 2 Validation**: Run integration test. User should be able to move nodes with children and see updated hierarchy.
 
