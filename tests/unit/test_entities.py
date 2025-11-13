@@ -865,3 +865,234 @@ class TestOutline:
         # Try to move node1 to node2's position
         with pytest.raises(ValueError, match='Target path .* already occupied'):
             outline.move_node('SQID1', MaterializedPath.from_string('200'))
+
+    def test_delete_node_leaf(self) -> None:
+        """Delete leaf node with no children."""
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
+
+        node1 = Node(
+            sqid=SQID(value='SQID1'),
+            mp=MaterializedPath.from_string('100'),
+            title='Node One',
+            slug='node-one',
+        )
+        node2 = Node(
+            sqid=SQID(value='SQID2'),
+            mp=MaterializedPath.from_string('200'),
+            title='Node Two',
+            slug='node-two',
+        )
+
+        outline = Outline(nodes={'SQID1': node1, 'SQID2': node2})
+
+        # Delete node1 (leaf node)
+        result = outline.delete_node('SQID1')
+
+        assert result == [node1]
+        assert 'SQID1' not in outline.nodes
+        assert 'SQID2' in outline.nodes
+
+    def test_delete_node_with_children_raises_error(self) -> None:
+        """Deleting node with children raises error."""
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
+
+        parent = Node(
+            sqid=SQID(value='PARENT'),
+            mp=MaterializedPath.from_string('100'),
+            title='Parent',
+            slug='parent',
+        )
+        child = Node(
+            sqid=SQID(value='CHILD'),
+            mp=MaterializedPath.from_string('100-100'),
+            title='Child',
+            slug='child',
+        )
+
+        outline = Outline(nodes={'PARENT': parent, 'CHILD': child})
+
+        # Try to delete parent (has children)
+        with pytest.raises(ValueError, match='Cannot delete node with children'):
+            outline.delete_node('PARENT')
+
+    def test_delete_node_not_found_raises_error(self) -> None:
+        """Deleting non-existent node raises error."""
+        from linemark.domain.entities import Outline
+
+        outline = Outline()
+
+        with pytest.raises(ValueError, match='Node with SQID .* not found'):
+            outline.delete_node('MISSING')
+
+    def test_delete_node_recursive(self) -> None:
+        """Delete node and all descendants recursively."""
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
+
+        root = Node(
+            sqid=SQID(value='ROOT'),
+            mp=MaterializedPath.from_string('100'),
+            title='Root',
+            slug='root',
+        )
+        child1 = Node(
+            sqid=SQID(value='CHILD1'),
+            mp=MaterializedPath.from_string('100-100'),
+            title='Child 1',
+            slug='child-1',
+        )
+        child2 = Node(
+            sqid=SQID(value='CHILD2'),
+            mp=MaterializedPath.from_string('100-200'),
+            title='Child 2',
+            slug='child-2',
+        )
+        grandchild = Node(
+            sqid=SQID(value='GRAND'),
+            mp=MaterializedPath.from_string('100-100-100'),
+            title='Grandchild',
+            slug='grandchild',
+        )
+        sibling = Node(
+            sqid=SQID(value='SIBLING'),
+            mp=MaterializedPath.from_string('200'),
+            title='Sibling',
+            slug='sibling',
+        )
+
+        outline = Outline(
+            nodes={
+                'ROOT': root,
+                'CHILD1': child1,
+                'CHILD2': child2,
+                'GRAND': grandchild,
+                'SIBLING': sibling,
+            }
+        )
+
+        # Delete root recursively (should delete root, child1, child2, grandchild)
+        deleted = outline.delete_node_recursive('ROOT')
+
+        assert len(deleted) == 4
+        assert root in deleted
+        assert child1 in deleted
+        assert child2 in deleted
+        assert grandchild in deleted
+
+        # Only sibling should remain
+        assert len(outline.nodes) == 1
+        assert 'SIBLING' in outline.nodes
+
+    def test_delete_node_recursive_leaf(self) -> None:
+        """Deleting leaf node recursively works same as normal delete."""
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
+
+        node1 = Node(
+            sqid=SQID(value='SQID1'),
+            mp=MaterializedPath.from_string('100'),
+            title='Node One',
+            slug='node-one',
+        )
+        node2 = Node(
+            sqid=SQID(value='SQID2'),
+            mp=MaterializedPath.from_string('200'),
+            title='Node Two',
+            slug='node-two',
+        )
+
+        outline = Outline(nodes={'SQID1': node1, 'SQID2': node2})
+
+        # Delete leaf recursively
+        deleted = outline.delete_node_recursive('SQID1')
+
+        assert deleted == [node1]
+        assert 'SQID1' not in outline.nodes
+
+    def test_delete_node_promote(self) -> None:
+        """Delete node and promote children to parent level."""
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
+
+        parent = Node(
+            sqid=SQID(value='PARENT'),
+            mp=MaterializedPath.from_string('100'),
+            title='Parent',
+            slug='parent',
+        )
+        child1 = Node(
+            sqid=SQID(value='CHILD1'),
+            mp=MaterializedPath.from_string('100-100'),
+            title='Child 1',
+            slug='child-1',
+        )
+        child2 = Node(
+            sqid=SQID(value='CHILD2'),
+            mp=MaterializedPath.from_string('100-200'),
+            title='Child 2',
+            slug='child-2',
+        )
+        grandchild = Node(
+            sqid=SQID(value='GRAND'),
+            mp=MaterializedPath.from_string('100-100-100'),
+            title='Grandchild',
+            slug='grandchild',
+        )
+
+        outline = Outline(
+            nodes={
+                'PARENT': parent,
+                'CHILD1': child1,
+                'CHILD2': child2,
+                'GRAND': grandchild,
+            }
+        )
+
+        # Delete parent and promote children
+        deleted, promoted = outline.delete_node_promote('PARENT')
+
+        # Parent should be deleted
+        assert deleted == [parent]
+        assert 'PARENT' not in outline.nodes
+
+        # Children promoted to root level (100 was occupied, so use next position)
+        assert len(promoted) == 2
+        promoted_sqids = {n.sqid.value for n in promoted}
+        assert 'CHILD1' in promoted_sqids
+        assert 'CHILD2' in promoted_sqids
+
+        # Check children are now at root level (sibling to parent's former position)
+        child1_new = outline.get_by_sqid('CHILD1')
+        child2_new = outline.get_by_sqid('CHILD2')
+        assert child1_new is not None
+        assert child2_new is not None
+        assert child1_new.mp.depth == 1  # Root level
+        assert child2_new.mp.depth == 1  # Root level
+
+        # Grandchild should still be child of CHILD1 (one level up)
+        grandchild_new = outline.get_by_sqid('GRAND')
+        assert grandchild_new is not None
+        assert grandchild_new.mp.depth == 2  # Child of promoted node
+
+    def test_delete_node_promote_leaf_node(self) -> None:
+        """Promoting a leaf node works same as normal delete."""
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
+
+        node1 = Node(
+            sqid=SQID(value='SQID1'),
+            mp=MaterializedPath.from_string('100'),
+            title='Node One',
+            slug='node-one',
+        )
+        node2 = Node(
+            sqid=SQID(value='SQID2'),
+            mp=MaterializedPath.from_string('200'),
+            title='Node Two',
+            slug='node-two',
+        )
+
+        outline = Outline(nodes={'SQID1': node1, 'SQID2': node2})
+
+        # Promote leaf node (no children to promote)
+        deleted, promoted = outline.delete_node_promote('SQID1')
+
+        assert deleted == [node1]
+        assert promoted == []
+        assert 'SQID1' not in outline.nodes

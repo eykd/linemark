@@ -12,6 +12,7 @@ from linemark.adapters.slugifier import SlugifierAdapter
 from linemark.adapters.sqid_generator import SQIDGeneratorAdapter
 from linemark.cli.formatters import format_json, format_tree
 from linemark.use_cases.add_node import AddNodeUseCase
+from linemark.use_cases.delete_node import DeleteNodeUseCase
 from linemark.use_cases.list_outline import ListOutlineUseCase
 from linemark.use_cases.manage_types import ManageTypesUseCase
 from linemark.use_cases.move_node import MoveNodeUseCase
@@ -289,6 +290,71 @@ def rename(sqid: str, new_title: str, directory: Path) -> None:
         # Output success message
         click.echo(f'Renamed node @{sqid_clean} to "{new_title}"')
         click.echo('All files updated successfully')
+
+    except ValueError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+
+
+@lmk.command()
+@click.argument('sqid')
+@click.option(
+    '-r',
+    '--recursive',
+    is_flag=True,
+    help='Delete node and all descendants recursively',
+)
+@click.option(
+    '-p',
+    '--promote',
+    is_flag=True,
+    help='Delete node but promote children to parent level',
+)
+@click.option(
+    '--directory',
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=Path.cwd(),
+    help='Working directory (default: current directory)',
+)
+def delete(sqid: str, recursive: bool, promote: bool, directory: Path) -> None:  # noqa: FBT001
+    r"""Delete a node from the outline.
+
+    By default, only deletes leaf nodes (nodes without children).
+    Use --recursive to delete node and all descendants.
+    Use --promote to delete node but promote children to parent level.
+
+    Examples:
+        \b
+        # Delete a leaf node
+        lmk delete @SQID1
+
+        \b
+        # Delete node and all descendants
+        lmk delete @SQID1 --recursive
+
+        \b
+        # Delete node but keep children (promote to parent level)
+        lmk delete @SQID1 --promote
+
+    """
+    try:
+        # Strip @ prefix if provided
+        sqid_clean = sqid.lstrip('@')
+
+        # Create adapter
+        filesystem = FileSystemAdapter()
+
+        # Execute use case
+        use_case = DeleteNodeUseCase(filesystem=filesystem)
+        deleted = use_case.execute(sqid=sqid_clean, directory=directory, recursive=recursive, promote=promote)
+
+        # Output success message
+        if recursive:
+            click.echo(f'Deleted node @{sqid_clean} and {len(deleted) - 1} descendants')
+        elif promote:
+            click.echo(f'Deleted node @{sqid_clean} (children promoted to parent level)')
+        else:
+            click.echo(f'Deleted node @{sqid_clean}')
 
     except ValueError as e:
         click.echo(f'Error: {e}', err=True)

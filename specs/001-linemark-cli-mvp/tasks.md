@@ -238,25 +238,25 @@ This document provides a complete, executable task breakdown for implementing Li
 
 ### Domain Logic for Delete Operations
 
-- [ ] T061 [P] [US5] Write test for Outline.delete_node() in tests/unit/test_outline.py
-- [ ] T062 [P] [US5] Write test for Outline.delete_node_recursive() in tests/unit/test_outline.py
-- [ ] T063 [P] [US5] Write test for Outline.delete_node_promote() in tests/unit/test_outline.py
+- [X] T061 [P] [US5] Write test for Outline.delete_node() in tests/unit/test_outline.py
+- [X] T062 [P] [US5] Write test for Outline.delete_node_recursive() in tests/unit/test_outline.py
+- [X] T063 [P] [US5] Write test for Outline.delete_node_promote() in tests/unit/test_outline.py
 
 ### Use Case Implementation
 
-- [ ] T064 [US5] Implement Outline.delete_node() in src/linemark/domain/entities.py for leaf node deletion
-- [ ] T065 [US5] Implement Outline.delete_node_recursive() in src/linemark/domain/entities.py cascading deletion to descendants
-- [ ] T066 [US5] Implement Outline.delete_node_promote() in src/linemark/domain/entities.py promoting children and renumbering
-- [ ] T067 [US5] Write unit test for DeleteNodeUseCase in tests/unit/test_delete_node_use_case.py
-- [ ] T068 [US5] Implement DeleteNodeUseCase in src/linemark/use_cases/delete_node.py with interactive confirmation and --force flag
+- [X] T064 [US5] Implement Outline.delete_node() in src/linemark/domain/entities.py for leaf node deletion
+- [X] T065 [US5] Implement Outline.delete_node_recursive() in src/linemark/domain/entities.py cascading deletion to descendants
+- [X] T066 [US5] Implement Outline.delete_node_promote() in src/linemark/domain/entities.py promoting children and renumbering
+- [X] T067 [US5] Write unit test for DeleteNodeUseCase in tests/unit/test_delete_node_use_case.py
+- [X] T068 [US5] Implement DeleteNodeUseCase in src/linemark/use_cases/delete_node.py with interactive confirmation and --force flag
 
 ### CLI Implementation
 
-- [ ] T069 [US5] Implement `lmk delete` command in src/linemark/cli/main.py with -r, -p, --force, --directory options
+- [X] T069 [US5] Implement `lmk delete` command in src/linemark/cli/main.py with -r, -p, --force, --directory options
 
 ### Integration Test
 
-- [ ] T070 [US5] Write integration test in tests/integration/test_delete_workflow.py verifying recursive and promote deletion modes
+- [X] T070 [US5] Write integration test in tests/integration/test_delete_workflow.py verifying recursive and promote deletion modes
 
 **Story 5 Validation**: Run integration test. User should be able to delete nodes with different strategies.
 

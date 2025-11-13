@@ -378,3 +378,149 @@ class Outline(BaseModel):
         # Cascade update to descendants
         for desc in descendants:
             desc.mp = desc.mp.replace_prefix(old_mp, new_mp)
+
+    def delete_node(self, sqid: SQID | str) -> list[Node]:
+        """Delete a leaf node (node with no children).
+
+        Args:
+            sqid: SQID of node to delete
+
+        Returns:
+            List containing the deleted node
+
+        Raises:
+            ValueError: If node not found or node has children
+
+        """
+        # Find node to delete
+        sqid_str = sqid.value if isinstance(sqid, SQID) else sqid
+        node = self.get_by_sqid(sqid_str)
+        if node is None:
+            msg = f'Node with SQID {sqid_str} not found'
+            raise ValueError(msg)
+
+        # Check if node has children
+        children = [
+            n
+            for n in self.nodes.values()
+            if len(n.mp.segments) == len(node.mp.segments) + 1
+            and n.mp.segments[: len(node.mp.segments)] == node.mp.segments
+        ]
+
+        if children:
+            msg = 'Cannot delete node with children. Use delete_node_recursive or delete_node_promote instead.'
+            raise ValueError(msg)
+
+        # Delete the node
+        del self.nodes[sqid_str]
+        return [node]
+
+    def delete_node_recursive(self, sqid: SQID | str) -> list[Node]:
+        """Delete node and all its descendants recursively.
+
+        Args:
+            sqid: SQID of node to delete
+
+        Returns:
+            List of all deleted nodes (node + descendants)
+
+        Raises:
+            ValueError: If node not found
+
+        """
+        # Find node to delete
+        sqid_str = sqid.value if isinstance(sqid, SQID) else sqid
+        node = self.get_by_sqid(sqid_str)
+        if node is None:
+            msg = f'Node with SQID {sqid_str} not found'
+            raise ValueError(msg)
+
+        # Find all descendants (nodes with MP starting with this node's MP)
+        descendants = [
+            n
+            for n in self.nodes.values()
+            if len(n.mp.segments) > len(node.mp.segments) and n.mp.segments[: len(node.mp.segments)] == node.mp.segments
+        ]
+
+        # Collect all nodes to delete
+        to_delete = [node, *descendants]
+
+        # Delete all nodes
+        for n in to_delete:
+            del self.nodes[n.sqid.value]
+
+        return to_delete
+
+    def delete_node_promote(self, sqid: SQID | str) -> tuple[list[Node], list[Node]]:
+        """Delete node and promote its children to parent level.
+
+        Children are moved one level up and renumbered at their new level.
+        Grandchildren (and deeper descendants) are updated accordingly.
+
+        Args:
+            sqid: SQID of node to delete
+
+        Returns:
+            Tuple of (deleted_nodes, promoted_nodes)
+            - deleted_nodes: List containing only the deleted node
+            - promoted_nodes: List of immediate children that were promoted
+
+        Raises:
+            ValueError: If node not found
+
+        """
+        # Find node to delete
+        sqid_str = sqid.value if isinstance(sqid, SQID) else sqid
+        node = self.get_by_sqid(sqid_str)
+        if node is None:
+            msg = f'Node with SQID {sqid_str} not found'
+            raise ValueError(msg)
+
+        # Find immediate children (direct children only)
+        children = [
+            n
+            for n in self.nodes.values()
+            if len(n.mp.segments) == len(node.mp.segments) + 1
+            and n.mp.segments[: len(node.mp.segments)] == node.mp.segments
+        ]
+
+        # If node is at root, children stay at root but need new positions
+        # If node has parent, children move to parent level
+        new_parent_mp = None if node.mp.depth == 1 else node.mp.parent()
+
+        # Promote each child
+        promoted_nodes: list[Node] = []
+        for child in children:
+            # Get all descendants of this child
+            child_descendants = [
+                n
+                for n in self.nodes.values()
+                if len(n.mp.segments) > len(child.mp.segments)
+                and n.mp.segments[: len(child.mp.segments)] == child.mp.segments
+            ]
+
+            # Calculate new position for child at parent level
+            if new_parent_mp is None:
+                # Promote to root - find next available position
+                position_int = self.find_next_sibling_position(None)
+                new_position = MaterializedPath(segments=(position_int,))
+            else:
+                # Promote to parent level - find next available sibling position
+                position_int = self.find_next_sibling_position(new_parent_mp)
+                new_position = MaterializedPath(segments=(*new_parent_mp.segments, position_int))
+
+            # Store old MP for descendants update
+            old_child_mp = child.mp
+
+            # Update child MP
+            child.mp = new_position
+            promoted_nodes.append(child)
+
+            # Update all descendants of this child
+            for desc in child_descendants:
+                desc.mp = desc.mp.replace_prefix(old_child_mp, new_position)
+
+        # Delete the node
+        del self.nodes[sqid_str]
+
+        return ([node], promoted_nodes)
