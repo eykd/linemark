@@ -60,14 +60,18 @@ class ListOutlineUseCase:
 
         return 'Untitled'  # pragma: no cover
 
-    def execute(self, directory: Path) -> list[Node]:
+    def execute(self, directory: Path, root_sqid: str | None = None) -> list[Node]:
         """Execute the list outline use case.
 
         Args:
             directory: Working directory containing outline files
+            root_sqid: Optional SQID to filter to subtree
 
         Returns:
-            List of nodes sorted by materialized path
+            List of nodes (all or filtered subtree)
+
+        Raises:
+            ValueError: If root_sqid is invalid or not found
 
         """
         nodes_by_sqid: dict[str, Node] = {}
@@ -109,5 +113,84 @@ class ListOutlineUseCase:
             # Add document type
             nodes_by_sqid[sqid_str].document_types.add(doc_type)
 
-        # Return nodes sorted by materialized path
-        return sorted(nodes_by_sqid.values(), key=lambda n: n.mp.as_string)
+        # Get all nodes sorted by materialized path
+        all_nodes = sorted(nodes_by_sqid.values(), key=lambda n: n.mp.as_string)
+
+        # Filter to subtree if requested
+        if root_sqid:
+            return self._filter_to_subtree(all_nodes, root_sqid)
+
+        return all_nodes
+
+    def _filter_to_subtree(self, all_nodes: list[Node], root_sqid: str) -> list[Node]:
+        """Filter nodes to subtree rooted at the given SQID.
+
+        Args:
+            all_nodes: All nodes in the outline
+            root_sqid: SQID of the subtree root
+
+        Returns:
+            List containing root node and its descendants
+
+        Raises:
+            ValueError: If root_sqid not found in nodes
+
+        """
+        # Find root node
+        root_node = next((n for n in all_nodes if n.sqid.value == root_sqid), None)
+        if root_node is None:
+            msg = f'SQID {root_sqid} not found in outline'
+            raise ValueError(msg)
+
+        # Check if orphaned
+        if self._is_orphaned(root_node, all_nodes):
+            # Return only the orphaned node
+            return [root_node]
+
+        # Get subtree
+        return self._get_subtree(root_node, all_nodes)
+
+    def _is_orphaned(self, node: Node, all_nodes: list[Node]) -> bool:  # noqa: PLR6301
+        """Check if node is orphaned (parent doesn't exist).
+
+        Args:
+            node: Node to check
+            all_nodes: All nodes in the outline
+
+        Returns:
+            True if node is orphaned, False otherwise
+
+        """
+        # Root nodes (depth 1) cannot be orphaned
+        if node.mp.depth == 1:
+            return False
+
+        # Check if parent exists
+        parent_mp = node.mp.parent()
+        return not any(n.mp == parent_mp for n in all_nodes)
+
+    def _get_subtree(self, root_node: Node, all_nodes: list[Node]) -> list[Node]:  # noqa: PLR6301
+        """Get subtree rooted at the given node.
+
+        Args:
+            root_node: Root of the subtree
+            all_nodes: All nodes in the outline
+
+        Returns:
+            List containing root node and all its descendants
+
+        """
+        # Get root MP segments
+        root_segments = root_node.mp.segments
+
+        # Find all descendants (nodes whose MP starts with root's MP)
+        subtree = [root_node]
+        for node in all_nodes:
+            if node == root_node:
+                continue
+            # Check if node is a descendant
+            node_segments = node.mp.segments
+            if len(node_segments) > len(root_segments) and node_segments[: len(root_segments)] == root_segments:
+                subtree.append(node)
+
+        return subtree

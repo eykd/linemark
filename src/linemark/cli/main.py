@@ -202,6 +202,19 @@ def add(
 
 
 @lmk.command()
+@click.argument('sqid', required=False, type=str)
+@click.option(
+    '--show-doctypes',
+    is_flag=True,
+    default=False,
+    help='Display document types for each node',
+)
+@click.option(
+    '--show-files',
+    is_flag=True,
+    default=False,
+    help='Display file paths for each node',
+)
 @click.option(
     '--json',
     'output_json',
@@ -214,8 +227,8 @@ def add(
     default=Path.cwd(),
     help='Working directory (default: current directory)',
 )
-def list(output_json: bool, directory: Path) -> None:  # noqa: A001, FBT001
-    """List all nodes in the outline.
+def list(sqid: str | None, show_doctypes: bool, show_files: bool, output_json: bool, directory: Path) -> None:  # noqa: A001, FBT001
+    """List all nodes in the outline, optionally filtered to a subtree.
 
     Displays the outline as a tree structure by default, or as nested JSON
     with --json flag.
@@ -223,12 +236,20 @@ def list(output_json: bool, directory: Path) -> None:  # noqa: A001, FBT001
     \b
     Examples:
         \b
-        # Show tree structure
+        # Show full outline as tree
         lmk list
 
-    \b
-        # Show JSON structure
-        lmk list --json
+        \b
+        # Show subtree starting at SQID
+        lmk list A3F7c
+
+        \b
+        # Show with document types
+        lmk list --show-doctypes
+
+        \b
+        # Show subtree with doctypes as JSON
+        lmk list A3F7c --show-doctypes --json
 
     """
     try:
@@ -237,19 +258,22 @@ def list(output_json: bool, directory: Path) -> None:  # noqa: A001, FBT001
 
         # Execute use case
         use_case = ListOutlineUseCase(filesystem=filesystem)
-        nodes = use_case.execute(directory=directory)
+        nodes = use_case.execute(directory=directory, root_sqid=sqid)
 
         # Format and output
-        output = format_json(nodes) if output_json else format_tree(nodes)
+        if output_json:
+            output = format_json(nodes, show_doctypes=show_doctypes, show_files=show_files)
+        else:
+            output = format_tree(nodes, show_doctypes=show_doctypes, show_files=show_files)
 
         if output:
             click.echo(output)
         else:
             click.echo('No nodes found in outline.', err=True)
 
-    except ValueError as e:  # pragma: no cover
-        click.echo(f'Error: {e}', err=True)  # pragma: no cover
-        sys.exit(1)  # pragma: no cover
+    except ValueError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
 
 
 @lmk.command()

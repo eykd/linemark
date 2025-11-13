@@ -221,3 +221,161 @@ title: Chapter One
     assert 'draft' in nodes[0].document_types
     assert 'notes' in nodes[0].document_types
     assert 'characters' in nodes[0].document_types
+
+
+# Subtree filtering tests (User Story 1)
+
+
+def test_execute_with_valid_sqid_filters_to_subtree() -> None:
+    """Test filtering outline to subtree with valid SQID."""
+    # Arrange
+    fs = FakeFileSystem()
+    directory = Path('/test')
+
+    # Root node
+    fs.files[str(directory / '001_sqid1_draft_chapter-one.md')] = """---
+title: Chapter One
+---
+"""
+    fs.files[str(directory / '001_sqid1_notes_chapter-one.md')] = ''
+
+    # Child node (will be root of subtree)
+    fs.files[str(directory / '001-100_sqid2_draft_section-one.md')] = """---
+title: Section One
+---
+"""
+    fs.files[str(directory / '001-100_sqid2_notes_section-one.md')] = ''
+
+    # Grandchild node (descendant of sqid2)
+    fs.files[str(directory / '001-100-100_sqid3_draft_subsection.md')] = """---
+title: Subsection
+---
+"""
+    fs.files[str(directory / '001-100-100_sqid3_notes_subsection.md')] = ''
+
+    # Sibling node (not in subtree)
+    fs.files[str(directory / '001-200_sqid4_draft_section-two.md')] = """---
+title: Section Two
+---
+"""
+    fs.files[str(directory / '001-200_sqid4_notes_section-two.md')] = ''
+
+    use_case = ListOutlineUseCase(filesystem=fs)
+
+    # Act
+    nodes = use_case.execute(directory=directory, root_sqid='sqid2')
+
+    # Assert
+    assert len(nodes) == 2  # sqid2 and its descendant sqid3
+    assert nodes[0].sqid.value == 'sqid2'
+    assert nodes[0].title == 'Section One'
+    assert nodes[1].sqid.value == 'sqid3'
+    assert nodes[1].title == 'Subsection'
+
+
+def test_execute_with_leaf_sqid_returns_single_node() -> None:
+    """Test filtering to leaf node returns only that node."""
+    # Arrange
+    fs = FakeFileSystem()
+    directory = Path('/test')
+
+    # Root node
+    fs.files[str(directory / '001_sqid1_draft_chapter-one.md')] = """---
+title: Chapter One
+---
+"""
+    fs.files[str(directory / '001_sqid1_notes_chapter-one.md')] = ''
+
+    # Leaf node
+    fs.files[str(directory / '001-100_sqid2_draft_section-one.md')] = """---
+title: Section One
+---
+"""
+    fs.files[str(directory / '001-100_sqid2_notes_section-one.md')] = ''
+
+    use_case = ListOutlineUseCase(filesystem=fs)
+
+    # Act
+    nodes = use_case.execute(directory=directory, root_sqid='sqid2')
+
+    # Assert
+    assert len(nodes) == 1
+    assert nodes[0].sqid.value == 'sqid2'
+    assert nodes[0].title == 'Section One'
+
+
+def test_execute_with_invalid_sqid_raises_error() -> None:
+    """Test filtering with invalid SQID raises ValueError."""
+    # Arrange
+    fs = FakeFileSystem()
+    directory = Path('/test')
+
+    # Add a valid node
+    fs.files[str(directory / '001_sqid1_draft_chapter-one.md')] = """---
+title: Chapter One
+---
+"""
+    fs.files[str(directory / '001_sqid1_notes_chapter-one.md')] = ''
+
+    use_case = ListOutlineUseCase(filesystem=fs)
+
+    # Act & Assert
+    import pytest
+
+    with pytest.raises(ValueError, match='SQID invalid not found'):
+        use_case.execute(directory=directory, root_sqid='invalid')
+
+
+def test_execute_with_orphaned_sqid_returns_node_only() -> None:
+    """Test filtering with orphaned node returns just that node."""
+    # Arrange
+    fs = FakeFileSystem()
+    directory = Path('/test')
+
+    # Orphaned node (parent 001-100 doesn't exist)
+    fs.files[str(directory / '001-100-100_orphan_draft_orphan-node.md')] = """---
+title: Orphan Node
+---
+"""
+    fs.files[str(directory / '001-100-100_orphan_notes_orphan-node.md')] = ''
+
+    use_case = ListOutlineUseCase(filesystem=fs)
+
+    # Act
+    nodes = use_case.execute(directory=directory, root_sqid='orphan')
+
+    # Assert
+    assert len(nodes) == 1
+    assert nodes[0].sqid.value == 'orphan'
+    assert nodes[0].title == 'Orphan Node'
+
+
+def test_execute_without_sqid_returns_all_nodes() -> None:
+    """Test backward compatibility: no SQID returns full outline."""
+    # Arrange
+    fs = FakeFileSystem()
+    directory = Path('/test')
+
+    # Root node
+    fs.files[str(directory / '001_sqid1_draft_chapter-one.md')] = """---
+title: Chapter One
+---
+"""
+    fs.files[str(directory / '001_sqid1_notes_chapter-one.md')] = ''
+
+    # Child node
+    fs.files[str(directory / '001-100_sqid2_draft_section-one.md')] = """---
+title: Section One
+---
+"""
+    fs.files[str(directory / '001-100_sqid2_notes_section-one.md')] = ''
+
+    use_case = ListOutlineUseCase(filesystem=fs)
+
+    # Act
+    nodes = use_case.execute(directory=directory)
+
+    # Assert
+    assert len(nodes) == 2  # All nodes returned
+    assert nodes[0].sqid.value == 'sqid1'
+    assert nodes[1].sqid.value == 'sqid2'

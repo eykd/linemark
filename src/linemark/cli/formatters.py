@@ -8,11 +8,13 @@ if TYPE_CHECKING:
     from linemark.domain.entities import Node
 
 
-def format_tree(nodes: list[Node]) -> str:
+def format_tree(nodes: list[Node], show_doctypes: bool = False, show_files: bool = False) -> str:  # noqa: FBT001, FBT002
     """Format nodes as a tree structure using Unicode box-drawing characters.
 
     Args:
         nodes: List of nodes sorted by materialized path
+        show_doctypes: Whether to display document types (default: False)
+        show_files: Whether to display file paths (default: False)
 
     Returns:
         Tree-formatted string with indentation and connectors
@@ -38,6 +40,25 @@ def format_tree(nodes: list[Node]) -> str:
             lines.append(f'{node.title} (@{node.sqid.value})')
         else:
             lines.append(f'{prefix}{connector}{node.title} (@{node.sqid.value})')
+
+        # Add doctype metadata if requested
+        if show_doctypes and node.document_types:
+            doctype_str = ', '.join(sorted(node.document_types))
+            # Add doctype line with proper indentation
+            if node.mp.depth == 1:
+                lines.append(f'└─ doctypes: {doctype_str}')
+            else:
+                lines.append(f'{prefix}└─ doctypes: {doctype_str}')
+
+        # Add file metadata if requested
+        if show_files and node.document_types:
+            file_list = node.filenames()
+            files_str = ', '.join(file_list)
+            # Add files line with proper indentation
+            if node.mp.depth == 1:
+                lines.append(f'└─ files: {files_str}')
+            else:
+                lines.append(f'{prefix}└─ files: {files_str}')
 
     return '\n'.join(lines)
 
@@ -99,11 +120,13 @@ def _build_prefix(node: Node, all_nodes: list[Node]) -> str:
     return ''.join(parts)
 
 
-def format_json(nodes: list[Node]) -> str:
+def format_json(nodes: list[Node], show_doctypes: bool = False, show_files: bool = False) -> str:  # noqa: FBT001, FBT002
     """Format nodes as nested JSON structure.
 
     Args:
         nodes: List of nodes sorted by materialized path
+        show_doctypes: Whether to include doctypes field (default: False)
+        show_files: Whether to include files field (default: False)
 
     Returns:
         JSON-formatted string with nested children arrays
@@ -125,10 +148,38 @@ def format_json(nodes: list[Node]) -> str:
                     'title': node.title,
                     'slug': node.slug,
                     'document_types': sorted(node.document_types),
-                    'children': build_tree(node.mp),
                 }
+
+                # Add doctypes field if requested and available
+                if show_doctypes and node.document_types:
+                    node_dict['doctypes'] = sorted(node.document_types)
+
+                # Add files field if requested and available
+                if show_files and node.document_types:
+                    node_dict['files'] = node.filenames()
+
+                # Add children
+                node_dict['children'] = build_tree(node.mp)
+
                 result.append(node_dict)
         return result
 
-    tree = build_tree(None)
+    # Find the shallowest parent MP in the nodes list
+    # This handles subtrees correctly (e.g., when filtering to sqid2)
+    if not nodes:
+        return '[]'
+
+    # Get all unique parent MPs
+    parent_mps_list = [node.mp.parent() for node in nodes]
+    # Remove duplicates by comparing materialized paths
+    unique_parents: list[MaterializedPath | None] = []
+    for mp in parent_mps_list:
+        if mp not in unique_parents:  # This works because MaterializedPath has __eq__
+            unique_parents.append(mp)
+
+    # Start from the shallowest parent (the one with smallest depth)
+    # or None if we have root nodes
+    root_parent = min(unique_parents, key=lambda mp: mp.depth if mp else -1)
+
+    tree = build_tree(root_parent)
     return json.dumps(tree, indent=2)

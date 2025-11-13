@@ -173,3 +173,224 @@ def test_format_tree_empty_list() -> None:
     """Test format_tree with empty node list."""
     result = format_tree([])
     assert result == ''
+
+
+# Doctype display tests (User Story 2)
+
+
+def test_format_tree_with_show_doctypes() -> None:
+    """Test format_tree displays doctypes when show_doctypes=True."""
+    node = Node(
+        sqid=SQID(value='abc123'),
+        mp=MaterializedPath(segments=(100,)),
+        title='Chapter One',
+        slug='chapter-one',
+        document_types={'draft', 'notes'},
+    )
+
+    result = format_tree([node], show_doctypes=True)
+
+    assert 'Chapter One (@abc123)' in result
+    assert 'doctypes: draft, notes' in result
+
+
+def test_format_tree_with_show_doctypes_omits_empty() -> None:
+    """Test format_tree omits doctype line when node has no doctypes."""
+    node = Node(
+        sqid=SQID(value='abc123'),
+        mp=MaterializedPath(segments=(100,)),
+        title='Chapter One',
+        slug='chapter-one',
+        document_types=set(),
+    )
+
+    result = format_tree([node], show_doctypes=True)
+
+    assert 'Chapter One (@abc123)' in result
+    assert 'doctypes:' not in result
+
+
+def test_format_tree_with_multiple_doctypes() -> None:
+    """Test format_tree displays multiple doctypes comma-separated and sorted."""
+    node = Node(
+        sqid=SQID(value='abc123'),
+        mp=MaterializedPath(segments=(100,)),
+        title='Chapter One',
+        slug='chapter-one',
+        document_types={'notes', 'draft', 'outline'},
+    )
+
+    result = format_tree([node], show_doctypes=True)
+
+    # Should be alphabetically sorted
+    assert 'doctypes: draft, notes, outline' in result
+
+
+def test_format_json_with_show_doctypes() -> None:
+    """Test format_json includes doctypes field when show_doctypes=True."""
+    import json
+
+    node = Node(
+        sqid=SQID(value='abc123'),
+        mp=MaterializedPath(segments=(100,)),
+        title='Chapter One',
+        slug='chapter-one',
+        document_types={'draft', 'notes'},
+    )
+
+    result = format_json([node], show_doctypes=True)
+    data = json.loads(result)
+
+    assert len(data) == 1
+    assert 'doctypes' in data[0]
+    assert sorted(data[0]['doctypes']) == ['draft', 'notes']
+
+
+def test_format_json_with_show_doctypes_omits_when_empty() -> None:
+    """Test format_json omits doctypes field when node has no doctypes."""
+    import json
+
+    node = Node(
+        sqid=SQID(value='abc123'),
+        mp=MaterializedPath(segments=(100,)),
+        title='Chapter One',
+        slug='chapter-one',
+        document_types=set(),
+    )
+
+    result = format_json([node], show_doctypes=True)
+    data = json.loads(result)
+
+    assert len(data) == 1
+    assert 'doctypes' not in data[0]
+
+
+def test_format_tree_without_show_doctypes_flag() -> None:
+    """Test backward compatibility: format_tree without show_doctypes flag."""
+    node = Node(
+        sqid=SQID(value='abc123'),
+        mp=MaterializedPath(segments=(100,)),
+        title='Chapter One',
+        slug='chapter-one',
+        document_types={'draft', 'notes'},
+    )
+
+    # Without flag (default)
+    result = format_tree([node])
+
+    assert 'Chapter One (@abc123)' in result
+    assert 'doctypes:' not in result
+
+
+# File display tests (User Story 3)
+
+
+def test_format_tree_with_show_files() -> None:
+    """Test format_tree displays file paths when show_files=True."""
+    node = Node(
+        sqid=SQID(value='abc123'),
+        mp=MaterializedPath(segments=(100,)),
+        title='Chapter One',
+        slug='chapter-one',
+        document_types={'draft', 'notes'},
+    )
+
+    result = format_tree([node], show_files=True)
+
+    assert 'Chapter One (@abc123)' in result
+    assert 'files:' in result
+    # Files should be shown in alphabetical order by doctype
+    assert '100_abc123_draft_chapter-one.md' in result
+    assert '100_abc123_notes_chapter-one.md' in result
+
+
+def test_format_tree_with_show_files_omits_empty() -> None:
+    """Test format_tree omits file line when node has no doctypes."""
+    node = Node(
+        sqid=SQID(value='abc123'),
+        mp=MaterializedPath(segments=(100,)),
+        title='Chapter One',
+        slug='chapter-one',
+        document_types=set(),
+    )
+
+    result = format_tree([node], show_files=True)
+
+    assert 'Chapter One (@abc123)' in result
+    assert 'files:' not in result
+
+
+def test_format_tree_with_multiple_files() -> None:
+    """Test format_tree displays all file paths for multiple doctypes."""
+    node = Node(
+        sqid=SQID(value='abc123'),
+        mp=MaterializedPath(segments=(100,)),
+        title='Chapter One',
+        slug='chapter-one',
+        document_types={'notes', 'draft', 'outline'},
+    )
+
+    result = format_tree([node], show_files=True)
+
+    # All three files should be present, sorted alphabetically by doctype
+    assert '100_abc123_draft_chapter-one.md' in result
+    assert '100_abc123_notes_chapter-one.md' in result
+    assert '100_abc123_outline_chapter-one.md' in result
+
+
+def test_format_tree_with_long_file_paths() -> None:
+    """Test format_tree displays full path for deeply nested nodes."""
+    node = Node(
+        sqid=SQID(value='abc123'),
+        mp=MaterializedPath(segments=(100, 200, 300)),
+        title='Deep Subsection',
+        slug='deep-subsection',
+        document_types={'draft'},
+    )
+
+    result = format_tree([node], show_files=True)
+
+    # Should show the complete filename with full materialized path
+    assert '100-200-300_abc123_draft_deep-subsection.md' in result
+
+
+def test_format_json_with_show_files() -> None:
+    """Test format_json includes files field when show_files=True."""
+    import json
+
+    node = Node(
+        sqid=SQID(value='abc123'),
+        mp=MaterializedPath(segments=(100,)),
+        title='Chapter One',
+        slug='chapter-one',
+        document_types={'draft', 'notes'},
+    )
+
+    result = format_json([node], show_files=True)
+    data = json.loads(result)
+
+    assert len(data) == 1
+    assert 'files' in data[0]
+    assert sorted(data[0]['files']) == [
+        '100_abc123_draft_chapter-one.md',
+        '100_abc123_notes_chapter-one.md',
+    ]
+
+
+def test_format_json_with_show_files_omits_when_empty() -> None:
+    """Test format_json omits files field when node has no doctypes."""
+    import json
+
+    node = Node(
+        sqid=SQID(value='abc123'),
+        mp=MaterializedPath(segments=(100,)),
+        title='Chapter One',
+        slug='chapter-one',
+        document_types=set(),
+    )
+
+    result = format_json([node], show_files=True)
+    data = json.loads(result)
+
+    assert len(data) == 1
+    assert 'files' not in data[0]
