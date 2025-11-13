@@ -584,3 +584,81 @@ class TestOutline:
 
         with pytest.raises(ValueError, match='No space for new sibling'):
             outline.find_next_sibling_position(None)
+
+    def test_add_node_to_empty_outline(self) -> None:
+        """Add first node to empty outline."""
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
+
+        outline = Outline()
+        position = outline.find_next_sibling_position(None)
+        node = Node(
+            sqid=SQID(value='A3F7c'),
+            mp=MaterializedPath(segments=(position,)),
+            title='Chapter One',
+            slug='chapter-one',
+        )
+
+        outline.add_node(node)
+
+        assert len(outline.nodes) == 1
+        assert outline.get_by_sqid('A3F7c') == node
+
+    def test_add_node_increments_counter(self) -> None:
+        """Adding node updates next_counter."""
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
+
+        outline = Outline(next_counter=5)
+        node = Node(
+            sqid=SQID(value='A3F7c'),
+            mp=MaterializedPath.from_string('100'),
+            title='Chapter One',
+            slug='chapter-one',
+        )
+
+        outline.add_node(node)
+
+        assert outline.next_counter == 6
+
+    def test_add_node_duplicate_sqid_raises_error(self) -> None:
+        """Adding node with duplicate SQID raises error."""
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
+
+        node1 = Node(
+            sqid=SQID(value='A3F7c'),
+            mp=MaterializedPath.from_string('100'),
+            title='Chapter One',
+            slug='chapter-one',
+        )
+        outline = Outline(nodes={'A3F7c': node1})
+
+        node2 = Node(
+            sqid=SQID(value='A3F7c'),  # Duplicate
+            mp=MaterializedPath.from_string('200'),
+            title='Chapter Two',
+            slug='chapter-two',
+        )
+
+        with pytest.raises(ValueError, match='SQID .* already exists'):
+            outline.add_node(node2)
+
+    def test_add_node_duplicate_mp_raises_error(self) -> None:
+        """Adding node with duplicate materialized path raises error."""
+        from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
+
+        node1 = Node(
+            sqid=SQID(value='A3F7c'),
+            mp=MaterializedPath.from_string('100'),
+            title='Chapter One',
+            slug='chapter-one',
+        )
+        outline = Outline(nodes={'A3F7c': node1})
+
+        node2 = Node(
+            sqid=SQID(value='B8K2x'),
+            mp=MaterializedPath.from_string('100'),  # Duplicate
+            title='Chapter Two',
+            slug='chapter-two',
+        )
+
+        with pytest.raises(ValueError, match='Materialized path .* already exists'):
+            outline.add_node(node2)

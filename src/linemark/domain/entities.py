@@ -279,3 +279,29 @@ class Outline(BaseModel):
         # Tier 1: for remaining siblings (1-unit increments)
         tier = 100 if len(siblings) < 9 else (10 if len(siblings) < 99 else 1)  # noqa: PLR2004
         return max_position + tier
+
+    def add_node(self, node: Node) -> None:
+        """Add a new node to the outline.
+
+        Args:
+            node: Node to add
+
+        Raises:
+            ValueError: If SQID or materialized path already exists
+
+        """
+        # Check for duplicate SQID
+        if node.sqid.value in self.nodes:
+            msg = f'SQID {node.sqid.value} already exists in outline'
+            raise ValueError(msg)
+
+        # Check for duplicate materialized path
+        if any(n.mp == node.mp for n in self.nodes.values()):
+            msg = f'Materialized path {node.mp.as_string} already exists in outline'
+            raise ValueError(msg)
+
+        # Add node to outline
+        self.nodes[node.sqid.value] = node
+
+        # Increment counter
+        self.next_counter += 1

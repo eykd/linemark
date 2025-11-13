@@ -96,18 +96,18 @@ This document provides a complete, executable task breakdown for implementing Li
 
 ### Contract Tests for Adapters
 
-- [ ] T024 [P] [US1] Write contract test for FileSystemAdapter in tests/contract/test_filesystem_adapter.py verifying read_file, write_file methods
-- [ ] T025 [P] [US1] Implement FileSystemAdapter in src/linemark/adapters/filesystem.py using pathlib
-- [ ] T026 [P] [US1] Write contract test for SQIDGeneratorAdapter in tests/contract/test_sqid_adapter.py verifying encode/decode
-- [ ] T027 [P] [US1] Implement SQIDGeneratorAdapter in src/linemark/adapters/sqid_generator.py wrapping sqids library
-- [ ] T028 [P] [US1] Write contract test for SlugifierAdapter in tests/contract/test_slugifier_adapter.py verifying slugify
-- [ ] T029 [P] [US1] Implement SlugifierAdapter in src/linemark/adapters/slugifier.py wrapping python-slugify
+- [X] T024 [P] [US1] Write contract test for FileSystemAdapter in tests/contract/test_filesystem_adapter.py verifying read_file, write_file methods
+- [X] T025 [P] [US1] Implement FileSystemAdapter in src/linemark/adapters/filesystem.py using pathlib
+- [X] T026 [P] [US1] Write contract test for SQIDGeneratorAdapter in tests/contract/test_sqid_adapter.py verifying encode/decode
+- [X] T027 [P] [US1] Implement SQIDGeneratorAdapter in src/linemark/adapters/sqid_generator.py wrapping sqids library
+- [X] T028 [P] [US1] Write contract test for SlugifierAdapter in tests/contract/test_slugifier_adapter.py verifying slugify
+- [X] T029 [P] [US1] Implement SlugifierAdapter in src/linemark/adapters/slugifier.py wrapping python-slugify
 
 ### Domain Logic for Node Addition
 
-- [ ] T030 [US1] Implement Outline.find_next_sibling_position() in src/linemark/domain/entities.py using tiered numbering (100/10/1)
-- [ ] T031 [US1] Write test for Outline.add_node() in tests/unit/test_outline.py
-- [ ] T032 [US1] Implement Outline.add_node() method in src/linemark/domain/entities.py
+- [X] T030 [US1] Implement Outline.find_next_sibling_position() in src/linemark/domain/entities.py using tiered numbering (100/10/1)
+- [X] T031 [US1] Write test for Outline.add_node() in tests/unit/test_outline.py
+- [X] T032 [US1] Implement Outline.add_node() method in src/linemark/domain/entities.py
 
 ### Use Case Implementation
 
