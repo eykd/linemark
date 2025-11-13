@@ -35,11 +35,11 @@ class SlugifierPort(Protocol):
             ValueError: If input produces empty slug
 
         Example:
-            >>> slugifier.slugify("Chapter One")
+            >>> slugifier.slugify('Chapter One')
             'chapter-one'
             >>> slugifier.slugify("Writer's Guide: Advanced!")
             'writers-guide-advanced'
-            >>> slugifier.slugify("Über cool")
+            >>> slugifier.slugify('Über cool')
             'uber-cool'
 
         Note:

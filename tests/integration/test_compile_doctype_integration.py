@@ -34,6 +34,7 @@ def test_compile_multiple_nodes(tmp_path: Path) -> None:
         # Extract SQID from first node to add a child
         result_list = runner.invoke(lmk, ['list', '--json', '--directory', str(isolated_dir)])
         import json
+
         nodes_tree = json.loads(result_list.output)
         nodes = flatten_nodes(nodes_tree)
         first_sqid = nodes[0]['sqid']
@@ -152,6 +153,7 @@ def test_subtree_compilation_with_children(tmp_path: Path) -> None:
         # Extract SQID
         result_list = runner.invoke(lmk, ['list', '--json', '--directory', str(isolated_dir)])
         import json
+
         nodes = flatten_nodes(json.loads(result_list.output))
         chapter_one_sqid = nodes[0]['sqid']
 
@@ -203,6 +205,7 @@ def test_leaf_node_subtree_compilation(tmp_path: Path) -> None:
         # Get SQID of Chapter Two
         result_list = runner.invoke(lmk, ['list', '--json', '--directory', str(isolated_dir)])
         import json
+
         nodes = flatten_nodes(json.loads(result_list.output))
         chapter_two_sqid = next(n['sqid'] for n in nodes if n['title'] == 'Chapter Two')
 
@@ -250,6 +253,7 @@ def test_subtree_with_no_matching_doctype_integration(tmp_path: Path) -> None:
         # Get SQID
         result_list = runner.invoke(lmk, ['list', '--json', '--directory', str(isolated_dir)])
         import json
+
         nodes = flatten_nodes(json.loads(result_list.output))
         sqid = nodes[0]['sqid']
 
@@ -275,6 +279,7 @@ def test_at_prefix_stripping_integration(tmp_path: Path) -> None:
         # Get SQID
         result_list = runner.invoke(lmk, ['list', '--json', '--directory', str(isolated_dir)])
         import json
+
         nodes = flatten_nodes(json.loads(result_list.output))
         sqid = nodes[0]['sqid']
 

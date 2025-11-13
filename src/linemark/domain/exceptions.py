@@ -65,8 +65,7 @@ class DoctypeNotFoundError(LinemarkError):
         """
         scope = f'subtree @{sqid}' if sqid else 'forest'
         super().__init__(
-            f"Doctype '{doctype}' not found in {scope}. "
-            f'Check doctype name and ensure at least one node has this file.'
+            f"Doctype '{doctype}' not found in {scope}. Check doctype name and ensure at least one node has this file."
         )
         self.doctype = doctype
         self.sqid = sqid

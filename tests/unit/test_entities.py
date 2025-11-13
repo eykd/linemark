@@ -1168,12 +1168,14 @@ class TestOutline:
             slug='child-2',
         )
 
-        outline = Outline(nodes={
-            'ROOT': root,
-            'PARENT': parent,
-            'CHILD1': child1,
-            'CHILD2': child2,
-        })
+        outline = Outline(
+            nodes={
+                'ROOT': root,
+                'PARENT': parent,
+                'CHILD1': child1,
+                'CHILD2': child2,
+            }
+        )
 
         # Delete parent, promote children to root's level
         deleted, promoted = outline.delete_node_promote('PARENT')

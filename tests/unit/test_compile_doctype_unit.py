@@ -32,11 +32,7 @@ class FakeFileSystem:
     def list_markdown_files(self, directory: Path) -> list[Path]:
         """List markdown files in directory."""
         dir_str = str(directory)
-        return sorted([
-            Path(path)
-            for path in self.files
-            if path.startswith(dir_str) and path.endswith('.md')
-        ])
+        return sorted([Path(path) for path in self.files if path.startswith(dir_str) and path.endswith('.md')])
 
     def write_file(self, path: Path, content: str) -> None:
         """Write file to in-memory storage."""
@@ -698,7 +694,9 @@ def test_empty_separator() -> None:
     assert 'PartOne' in result
     assert 'PartTwo' in result
     # Should appear consecutively with no separator (except frontmatter)
-    assert 'PartOne---\ntitle: Part Two\n---\nPartTwo' in result or 'PartOnePartTwo' not in result  # frontmatter prevents direct concat
+    assert (
+        'PartOne---\ntitle: Part Two\n---\nPartTwo' in result or 'PartOnePartTwo' not in result
+    )  # frontmatter prevents direct concat
 
 
 def test_default_separator_when_not_provided() -> None:
