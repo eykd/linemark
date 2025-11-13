@@ -274,16 +274,16 @@ This document provides a complete, executable task breakdown for implementing Li
 
 ### Use Case Implementation
 
-- [ ] T071 [P] [US6] Write unit test for CompactOutlineUseCase in tests/unit/test_compact_outline_use_case.py
-- [ ] T072 [US6] Implement CompactOutlineUseCase in src/linemark/use_cases/compact_outline.py using tiered redistribution algorithm per research.md R3
+- [X] T071 [P] [US6] Write unit test for CompactOutlineUseCase in tests/unit/test_compact_outline_use_case.py
+- [X] T072 [US6] Implement CompactOutlineUseCase in src/linemark/use_cases/compact_outline.py using tiered redistribution algorithm per research.md R3
 
 ### CLI Implementation
 
-- [ ] T073 [US6] Implement `lmk compact` command in src/linemark/cli/main.py with optional SQID/MP for subtree compaction
+- [X] T073 [US6] Implement `lmk compact` command in src/linemark/cli/main.py with optional SQID/MP for subtree compaction
 
 ### Integration Test
 
-- [ ] T074 [US6] Write integration test in tests/integration/test_compact_workflow.py verifying multi-level compaction
+- [X] T074 [US6] Write integration test in tests/integration/test_compact_workflow.py verifying multi-level compaction
 
 **Story 6 Validation**: Run integration test. User should be able to compact outline and see ideal spacing restored.
 
@@ -327,13 +327,13 @@ This document provides a complete, executable task breakdown for implementing Li
 
 ### Implementation
 
-- [ ] T079 [P] [US8] Implement JSON formatter in src/linemark/cli/formatters.py generating nested structure with children arrays
-- [ ] T080 [US8] Update ListOutlineUseCase in src/linemark/use_cases/list_outline.py to support JSON format flag
-- [ ] T081 [US8] Update `lmk list` command in src/linemark/cli/main.py to use --json flag
+- [X] T079 [P] [US8] Implement JSON formatter in src/linemark/cli/formatters.py generating nested structure with children arrays
+- [X] T080 [US8] Update ListOutlineUseCase in src/linemark/use_cases/list_outline.py to support JSON format flag
+- [X] T081 [US8] Update `lmk list` command in src/linemark/cli/main.py to use --json flag
 
 ### Integration Test
 
-- [ ] T082 [US8] Write integration test in tests/integration/test_list_formats.py verifying tree and JSON output correctness
+- [X] T082 [US8] Write integration test in tests/integration/test_list_formats.py verifying tree and JSON output correctness
 
 **Story 8 Validation**: Run integration test. User should see both output formats working.
 
