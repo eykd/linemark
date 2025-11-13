@@ -1,0 +1,86 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Verify tag is on master
+        run: |
+          git branch -r --contains ${{ github.ref }} | grep -q 'origin/master'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.7.19"
+          enable-cache: true
+
+      - name: Install Python dependencies
+        run: |
+          uv sync --group=test
+
+      - name: Run tests
+        run: |
+          uv run pytest --cov
+
+      - name: Run lint
+        run: |
+          uv run ruff check
+
+      - name: Run type check
+        run: |
+          uv run mypy src tests
+
+  publish:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: test
+    environment: PyPI
+
+    # Required for PyPI trusted publishing
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0  # Fetch all history for proper versioning
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.7.19"
+          enable-cache: true
+
+      - name: Build package
+        run: |
+          uv build
+
+      - name: Publish to PyPI
+        run: |
+          uv publish
