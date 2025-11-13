@@ -35,7 +35,11 @@ class DeleteNodeUseCase:
         self.filesystem = filesystem
 
     def execute(
-        self, sqid: str, directory: Path, recursive: bool = False, promote: bool = False  # noqa: FBT001, FBT002
+        self,
+        sqid: str,
+        directory: Path,
+        recursive: bool = False,  # noqa: FBT001, FBT002
+        promote: bool = False,  # noqa: FBT001, FBT002
     ) -> list[Node]:
         """Delete a node using the specified strategy.
 
