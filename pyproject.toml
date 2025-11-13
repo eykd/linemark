@@ -201,7 +201,7 @@ fixable = ["ALL"]
 unfixable = []
 
 [tool.ruff.lint.per-file-ignores]
-"src/lmk/cli/*.py" = [
+"src/linemark/cli/*.py" = [
     "D103",  # backslashes, e.g. \b, in CLI docstrings
 ]
 "tests/**/test*.py" = [
