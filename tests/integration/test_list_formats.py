@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from click.testing import CliRunner
 
 from linemark.cli.main import lmk
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_list_tree_format(tmp_path: Path) -> None:
@@ -41,7 +44,7 @@ def test_list_tree_format(tmp_path: Path) -> None:
         assert 'Child One' in result4.output
         assert 'Child Two' in result4.output
         # Tree should have indentation/box characters
-        assert ('├──' in result4.output or '└──' in result4.output)
+        assert '├──' in result4.output or '└──' in result4.output
 
 
 def test_list_json_format(tmp_path: Path) -> None:
@@ -54,9 +57,7 @@ def test_list_json_format(tmp_path: Path) -> None:
         assert result1.exit_code == 0
         root_sqid = result1.output.split('@')[1].split(')')[0]
 
-        result2 = runner.invoke(
-            lmk, ['add', 'Child', '--child-of', f'@{root_sqid}', '--directory', str(isolated_dir)]
-        )
+        result2 = runner.invoke(lmk, ['add', 'Child', '--child-of', f'@{root_sqid}', '--directory', str(isolated_dir)])
         assert result2.exit_code == 0
 
         # List in JSON format

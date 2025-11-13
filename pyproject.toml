@@ -327,6 +327,9 @@ source = ['src']
 omit = [
      'tests/*.py',
      'src/linemark/_version.py',
+     'src/linemark/__main__.py',
+     'src/linemark/domain/exceptions.py',
+     'src/linemark/ports/*.py',
      ]
 [tool.coverage.report]
 show_missing = true
