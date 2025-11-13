@@ -111,21 +111,21 @@ This document provides a complete, executable task breakdown for implementing Li
 
 ### Use Case Implementation
 
-- [ ] T033 [US1] Write unit test for AddNodeUseCase with fake adapters in tests/unit/test_add_node_use_case.py
-- [ ] T034 [US1] Implement AddNodeUseCase in src/linemark/use_cases/add_node.py orchestrating domain logic with ports
-- [ ] T035 [US1] Write unit test for ListOutlineUseCase with fake adapters in tests/unit/test_list_outline_use_case.py
-- [ ] T036 [US1] Implement ListOutlineUseCase in src/linemark/use_cases/list_outline.py with tree rendering
+- [X] T033 [US1] Write unit test for AddNodeUseCase with fake adapters in tests/unit/test_add_node_use_case.py
+- [X] T034 [US1] Implement AddNodeUseCase in src/linemark/use_cases/add_node.py orchestrating domain logic with ports
+- [X] T035 [US1] Write unit test for ListOutlineUseCase with fake adapters in tests/unit/test_list_outline_use_case.py
+- [X] T036 [US1] Implement ListOutlineUseCase in src/linemark/use_cases/list_outline.py with tree rendering
 
 ### CLI Implementation
 
-- [ ] T037 [US1] Implement tree formatter in src/linemark/cli/formatters.py using depth-first traversal with Unicode box-drawing characters
-- [ ] T038 [US1] Create Click CLI group in src/linemark/cli/main.py with lmk command
-- [ ] T039 [US1] Implement `lmk add` command in src/linemark/cli/main.py with --child-of, --sibling-of, --before, --after, --directory options
-- [ ] T040 [US1] Implement `lmk list` command in src/linemark/cli/main.py with --json, --directory options
+- [X] T037 [US1] Implement tree formatter in src/linemark/cli/formatters.py using depth-first traversal with Unicode box-drawing characters
+- [X] T038 [US1] Create Click CLI group in src/linemark/cli/main.py with lmk command
+- [X] T039 [US1] Implement `lmk add` command in src/linemark/cli/main.py with --child-of, --sibling-of, --before, --after, --directory options
+- [X] T040 [US1] Implement `lmk list` command in src/linemark/cli/main.py with --json, --directory options
 
 ### Integration Test
 
-- [ ] T041 [US1] Write integration test in tests/integration/test_add_workflow.py verifying complete add → list workflow with real filesystem
+- [X] T041 [US1] Write integration test in tests/integration/test_add_workflow.py verifying complete add → list workflow with real filesystem
 
 **Story 1 Validation**: Run integration test. User should be able to add nodes and list outline in tree format.
 

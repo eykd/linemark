@@ -15,7 +15,7 @@ class SlugifierAdapter:
     for converting titles to URL-safe, filename-safe slugs.
     """
 
-    def slugify(self, text: str) -> str:
+    def slugify(self, text: str) -> str:  # noqa: PLR6301
         """Convert text to URL-safe slug.
 
         Args:

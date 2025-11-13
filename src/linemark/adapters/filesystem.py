@@ -18,7 +18,7 @@ class FileSystemAdapter:
     All file operations are synchronous and use UTF-8 encoding.
     """
 
-    def read_file(self, filepath: Path) -> str:
+    def read_file(self, filepath: Path) -> str:  # noqa: PLR6301
         """Read file contents as string.
 
         Args:
@@ -35,7 +35,7 @@ class FileSystemAdapter:
         """
         return filepath.read_text(encoding='utf-8')
 
-    def write_file(self, filepath: Path, content: str) -> None:
+    def write_file(self, filepath: Path, content: str) -> None:  # noqa: PLR6301
         """Write string content to file, creating parent directories if needed.
 
         Args:
@@ -50,7 +50,7 @@ class FileSystemAdapter:
         filepath.parent.mkdir(parents=True, exist_ok=True)
         filepath.write_text(content, encoding='utf-8')
 
-    def delete_file(self, filepath: Path) -> None:
+    def delete_file(self, filepath: Path) -> None:  # noqa: PLR6301
         """Delete file if it exists.
 
         Args:
@@ -64,7 +64,7 @@ class FileSystemAdapter:
         if filepath.exists():
             filepath.unlink()
 
-    def rename_file(self, old_path: Path, new_path: Path) -> None:
+    def rename_file(self, old_path: Path, new_path: Path) -> None:  # noqa: PLR6301
         """Atomically rename file.
 
         Args:
@@ -88,7 +88,7 @@ class FileSystemAdapter:
 
         old_path.rename(new_path)
 
-    def list_markdown_files(self, directory: Path) -> list[Path]:
+    def list_markdown_files(self, directory: Path) -> list[Path]:  # noqa: PLR6301
         """List all .md files in directory (non-recursive).
 
         Args:
@@ -113,7 +113,7 @@ class FileSystemAdapter:
 
         return sorted(directory.glob('*.md'))
 
-    def file_exists(self, filepath: Path) -> bool:
+    def file_exists(self, filepath: Path) -> bool:  # noqa: PLR6301
         """Check if file exists.
 
         Args:
@@ -125,7 +125,7 @@ class FileSystemAdapter:
         """
         return filepath.exists() and filepath.is_file()
 
-    def create_directory(self, directory: Path) -> None:
+    def create_directory(self, directory: Path) -> None:  # noqa: PLR6301
         """Create directory and all parent directories.
 
         Args:
