@@ -12,6 +12,7 @@ from linemark.adapters.slugifier import SlugifierAdapter
 from linemark.adapters.sqid_generator import SQIDGeneratorAdapter
 from linemark.cli.formatters import format_json, format_tree
 from linemark.use_cases.add_node import AddNodeUseCase
+from linemark.use_cases.compact_outline import CompactOutlineUseCase
 from linemark.use_cases.delete_node import DeleteNodeUseCase
 from linemark.use_cases.list_outline import ListOutlineUseCase
 from linemark.use_cases.manage_types import ManageTypesUseCase
@@ -355,6 +356,52 @@ def delete(sqid: str, recursive: bool, promote: bool, directory: Path) -> None: 
             click.echo(f'Deleted node @{sqid_clean} (children promoted to parent level)')
         else:
             click.echo(f'Deleted node @{sqid_clean}')
+
+    except ValueError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+
+
+@lmk.command()
+@click.argument('sqid', required=False)
+@click.option(
+    '--directory',
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=Path.cwd(),
+    help='Working directory (default: current directory)',
+)
+def compact(sqid: str | None, directory: Path) -> None:
+    r"""Restore clean, evenly-spaced numbering to the outline.
+
+    Renumbers siblings at the specified level with even spacing (100s/10s/1s tier).
+    If SQID provided, compacts children of that node. Otherwise compacts root level.
+
+    Examples:
+        \b
+        # Compact root-level nodes
+        lmk compact
+
+        \b
+        # Compact children of specific node
+        lmk compact @SQID1
+
+    """
+    try:
+        # Strip @ prefix if provided
+        sqid_clean = sqid.lstrip('@') if sqid else None
+
+        # Create adapter
+        filesystem = FileSystemAdapter()
+
+        # Execute use case
+        use_case = CompactOutlineUseCase(filesystem=filesystem)
+        renamed = use_case.execute(sqid=sqid_clean, directory=directory)
+
+        # Output success message
+        if sqid_clean:
+            click.echo(f'Compacted {len(renamed)} children of @{sqid_clean}')
+        else:
+            click.echo(f'Compacted {len(renamed)} root-level nodes')
 
     except ValueError as e:
         click.echo(f'Error: {e}', err=True)
