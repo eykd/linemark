@@ -55,9 +55,9 @@ title: Chapter Two
 
 
 def test_list_command_with_sqid_filters_to_subtree(test_outline: Path) -> None:
-    """Test lmk list <sqid> filters to subtree."""
+    """Test lmk list @<sqid> filters to subtree."""
     runner = CliRunner()
-    result = runner.invoke(lmk, ['list', 'sqid2', '--directory', str(test_outline)])
+    result = runner.invoke(lmk, ['list', '@sqid2', '--directory', str(test_outline)])
 
     assert result.exit_code == 0
     output = result.output
@@ -73,9 +73,9 @@ def test_list_command_with_sqid_filters_to_subtree(test_outline: Path) -> None:
 
 
 def test_list_command_with_invalid_sqid_shows_error(test_outline: Path) -> None:
-    """Test lmk list <invalid> shows error message."""
+    """Test lmk list @<invalid> shows error message."""
     runner = CliRunner()
-    result = runner.invoke(lmk, ['list', 'invalid', '--directory', str(test_outline)])
+    result = runner.invoke(lmk, ['list', '@invalid', '--directory', str(test_outline)])
 
     assert result.exit_code == 1
     assert 'Error: SQID invalid not found in outline' in result.output
@@ -134,7 +134,7 @@ def test_list_command_with_show_doctypes_json(test_outline: Path) -> None:
 def test_list_command_with_sqid_and_show_doctypes(test_outline: Path) -> None:
     """Test combining SQID filtering with --show-doctypes."""
     runner = CliRunner()
-    result = runner.invoke(lmk, ['list', 'sqid2', '--show-doctypes', '--directory', str(test_outline)])
+    result = runner.invoke(lmk, ['list', '@sqid2', '--show-doctypes', '--directory', str(test_outline)])
 
     assert result.exit_code == 0
     output = result.output
@@ -192,7 +192,7 @@ def test_list_command_with_show_files_json(test_outline: Path) -> None:
 def test_list_command_with_sqid_and_show_files(test_outline: Path) -> None:
     """Test combining SQID filtering with --show-files."""
     runner = CliRunner()
-    result = runner.invoke(lmk, ['list', 'sqid2', '--show-files', '--directory', str(test_outline)])
+    result = runner.invoke(lmk, ['list', '@sqid2', '--show-files', '--directory', str(test_outline)])
 
     assert result.exit_code == 0
     output = result.output
@@ -213,9 +213,9 @@ def test_list_command_with_sqid_and_show_files(test_outline: Path) -> None:
 
 
 def test_list_command_with_all_flags_tree(test_outline: Path) -> None:
-    """Test lmk list with SQID, --show-doctypes, and --show-files in tree output."""
+    """Test lmk list with @SQID, --show-doctypes, and --show-files in tree output."""
     runner = CliRunner()
-    result = runner.invoke(lmk, ['list', 'sqid2', '--show-doctypes', '--show-files', '--directory', str(test_outline)])
+    result = runner.invoke(lmk, ['list', '@sqid2', '--show-doctypes', '--show-files', '--directory', str(test_outline)])
 
     assert result.exit_code == 0
     output = result.output
@@ -236,12 +236,12 @@ def test_list_command_with_all_flags_tree(test_outline: Path) -> None:
 
 
 def test_list_command_with_all_flags_json(test_outline: Path) -> None:
-    """Test lmk list with SQID, --show-doctypes, --show-files, and --json."""
+    """Test lmk list with @SQID, --show-doctypes, --show-files, and --json."""
     import json
 
     runner = CliRunner()
     result = runner.invoke(
-        lmk, ['list', 'sqid2', '--show-doctypes', '--show-files', '--json', '--directory', str(test_outline)]
+        lmk, ['list', '@sqid2', '--show-doctypes', '--show-files', '--json', '--directory', str(test_outline)]
     )
 
     assert result.exit_code == 0

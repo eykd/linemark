@@ -241,7 +241,7 @@ def list(sqid: str | None, show_doctypes: bool, show_files: bool, output_json: b
 
         \b
         # Show subtree starting at SQID
-        lmk list A3F7c
+        lmk list @A3F7c
 
         \b
         # Show with document types
@@ -249,16 +249,19 @@ def list(sqid: str | None, show_doctypes: bool, show_files: bool, output_json: b
 
         \b
         # Show subtree with doctypes as JSON
-        lmk list A3F7c --show-doctypes --json
+        lmk list @A3F7c --show-doctypes --json
 
     """
     try:
+        # Strip @ prefix if provided
+        clean_sqid = sqid.lstrip('@') if sqid else None
+
         # Create adapter
         filesystem = FileSystemAdapter()
 
         # Execute use case
         use_case = ListOutlineUseCase(filesystem=filesystem)
-        nodes = use_case.execute(directory=directory, root_sqid=sqid)
+        nodes = use_case.execute(directory=directory, root_sqid=clean_sqid)
 
         # Format and output
         if output_json:
