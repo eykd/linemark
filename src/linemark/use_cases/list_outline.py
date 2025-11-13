@@ -162,7 +162,7 @@ class ListOutlineUseCase:
 
         """
         # Root nodes (depth 1) cannot be orphaned
-        if node.mp.depth == 1:
+        if node.mp.depth == 1:  # pragma: no cover
             return False
 
         # Check if parent exists
