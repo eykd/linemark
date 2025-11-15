@@ -1,21 +1,31 @@
-# Linemark CLI Writing Project Manager
+# Linemark
 
-Linemark is a command-line tool for planning, organizing, and writing stories using a hierarchical document structure. It provides a clean, file-based approach to managing complex writing projects with structured content nodes, notes, and flexible organization.
+**Hierarchical Markdown outline manager using filename-based organization**
+
+Linemark is a command-line tool for managing structured outlines of Markdown documents. It organizes content hierarchically using materialized paths encoded in filenames, enabling you to build, navigate, and reorganize complex writing projects without nested folders or external databases.
 
 ## Overview
 
-Linemark helps writers organize their work by breaking down documents into a hierarchical structure of nodes stored in plain Markdown files. Each node contains main content, metadata, and optional notes. The project uses a "binder" approach where the overall structure is maintained in a special `_binder.md` file, while individual content pieces are stored in separate files.
+Linemark stores your outline structure directly in filenames using a simple but powerful convention. Each node in your outline gets:
 
-Key features:
-- **File-based storage**: All content in plain Markdown files
-- **Hierarchical organization**: Tree structure of content nodes
-- **Editor integration**: Launch your preferred editor for content editing
-- **Atomic operations**: Safe file operations that preserve existing content
-- **Audit capabilities**: Check project integrity and consistency
+- A **materialized path** (like `100-010-001`) that determines its position in the hierarchy
+- A **unique stable identifier (SQID)** that never changes, even when moving or renaming
+- Multiple **document type files** (draft, notes, characters, etc.) for different kinds of content
 
-## Installation
+This design keeps everything in plain Markdown files with YAML frontmatter, making your content readable by any text editor while providing powerful organizational capabilities through the CLI.
 
-### From Source (Development)
+### Key Features
+
+- **Filename-based hierarchy**: Structure encoded in filenames means perfect sorting in any file browser
+- **Stable identifiers**: Node SQIDs remain constant across moves and renames for reliable references
+- **Multiple document types**: Each node can have draft, notes, and custom document types
+- **No hidden state**: Everything visible in filenames and frontmatter - no databases or config files
+- **Plain Markdown**: Works with Obsidian, VS Code, and any Markdown-compatible tool
+- **Hierarchical operations**: Move entire subtrees, compile by document type, filter by subtree
+
+## Quick Start
+
+### Installation
 
 ```bash
 # Clone the repository
@@ -31,200 +41,299 @@ pip install -e .
 lmk --help
 ```
 
-### System Requirements
+**Requirements**: Python 3.13 or higher
 
-- Python 3.13 or higher
-- Your preferred text editor (set via EDITOR environment variable)
-
-## Quick Start
-
-### 1. Initialize a New Project
+### Create Your First Outline
 
 ```bash
-# Create a new writing project
+# Create a new directory for your project
 mkdir my-novel
 cd my-novel
-lmk init --title "My Great Novel"
-```
 
+# Add a root-level chapter
+lmk add "Chapter One"
+# Output: Created node 100 (@Gxn7qZp): Chapter One
+#         Draft: 100_Gxn7qZp_draft_chapter-one.md
+#         Notes: 100_Gxn7qZp_notes_chapter-one.md
 
-### 2. Add Content Nodes
+# Add a section under the chapter
+lmk add "Opening Scene" --child-of @Gxn7qZp
 
-```bash
-# Add top-level chapters
-lmk add "Part 1: The Beginning"
-lmk add "Chapter 1: Origins" --parent 01234567
+# Add another chapter
+lmk add "Chapter Two"
 
-# The output shows the generated UUIDv7 identifier:
-# Added "Part 1: The Beginning" (01234567)
-# Created files: 01234567.md, 01234567.notes.md
-```
-
-### 3. View Project Structure
-
-```bash
-lmk structure
-
+# View your outline
+lmk list
 # Output:
-# Project Structure:
-# ├─ Part 1: The Beginning (01234567)
-# │  └─ Chapter 1: Origins (89abcdef)
+# Chapter One (@Gxn7qZp)
+# └── Opening Scene (@B2k5mNq)
+# Chapter Two (@K7j2vLp)
 ```
 
-### 4. Edit Content
+### File Structure
 
-```bash
-# Edit the main content
-lmk edit 89abcdef --part draft
-
-# Edit notes
-lmk edit 89abcdef --part notes
-
-# Edit synopsis (metadata)
-lmk edit 89abcdef --part synopsis
-```
-
-### 5. Create Freeform Content
-
-```bash
-# Quick writing for ideas outside the main structure
-lmk write "Character development ideas"
-
-# Creates: 20250920T1530_01234567-89ab-cdef-0123-456789abcdef.md
-```
-
-## Command Reference
-
-### Project Management
-
-- `lmk init --title TITLE [--path PATH]` - Initialize new project
-- `lmk audit [--fix]` - Check project integrity
-
-### Content Management
-
-- `lmk add TITLE [--parent ID] [--position INDEX]` - Add new node
-- `lmk edit NODE_ID --part {draft|notes|synopsis}` - Edit content
-- `lmk materialize TITLE [--parent ID]` - Convert placeholder to node
-- `lmk move NODE_ID [--parent ID] [--position INDEX]` - Reorganize hierarchy
-- `lmk remove NODE_ID [--delete-files] [--force]` - Remove node
-
-### Viewing and Organization
-
-- `lmk structure [--format {tree|json}]` - Display project hierarchy
-- `lmk write [TITLE]` - Create timestamped freeform file
-
-## File Structure
-
-Linemark organizes projects with this structure:
+After the commands above, your directory contains:
 
 ```
 my-novel/
-├── _binder.md                    # Project structure (managed content)
-├── 01234567.md                   # Node content file
-├── 01234567.notes.md             # Node notes file
-├── 89abcdef.md                   # Another node
-├── 89abcdef.notes.md             # Its notes
-└── 20250920T1530_*.md            # Freeform writing files
+├── 100_Gxn7qZp_draft_chapter-one.md
+├── 100_Gxn7qZp_notes_chapter-one.md
+├── 100-010_B2k5mNq_draft_opening-scene.md
+├── 100-010_B2k5mNq_notes_opening-scene.md
+├── 200_K7j2vLp_draft_chapter-two.md
+└── 200_K7j2vLp_notes_chapter-two.md
 ```
 
-### Binder File Format
-
-The `_binder.md` file contains your project structure between managed markers:
+Each file contains YAML frontmatter:
 
 ```markdown
-# My Novel
+---
+sqid: Gxn7qZp
+title: Chapter One
+---
 
-Your project description and notes.
+# Chapter One
 
-<!-- lmk:begin-binder -->
-- [Part 1: The Beginning](01234567.md)
-  - [Chapter 1: Origins](89abcdef.md)
-  - [Future Chapter]()
-<!-- lmk:end-binder -->
-
-Additional content is preserved outside the managed section.
+Your content here...
 ```
 
-### Node File Format
+## Core Concepts
 
-Each node consists of two files with YAML frontmatter:
+### Materialized Paths
 
-**Content file (01234567.md)**:
-```markdown
----
-id: 01234567
-title: "Part 1: The Beginning"
-synopsis: |
-  Opening section that establishes
-  the world and main characters
-created: 2025-09-20T15:30:00Z
-updated: 2025-09-20T15:30:00Z
----
+The hierarchical position encoded in the filename:
 
-# Part 1: The Beginning
+- `100` - Root-level node (first chapter)
+- `100-010` - Child of node 100 (first section)
+- `100-010-001` - Child of node 100-010 (first subsection)
+- `200` - Root-level node (second chapter)
 
-Your story content goes here...
+Materialized paths determine sort order and hierarchy at a glance.
+
+### SQIDs (Stable Identifiers)
+
+Each node gets a unique 7-character identifier like `Gxn7qZp`:
+
+- Generated using the sqids library
+- URL-safe and human-readable
+- Never changes when you move or rename nodes
+- Used for reliable cross-references
+- Prefixed with `@` in commands: `@Gxn7qZp`
+
+### Document Types
+
+Each node can have multiple document files:
+
+- **Required**: `draft` (main content) and `notes` (research/ideas)
+- **Optional**: Any custom type you create (characters, worldbuilding, outline, etc.)
+
+Example files for one node:
+- `100_Gxn7qZp_draft_chapter-one.md`
+- `100_Gxn7qZp_notes_chapter-one.md`
+- `100_Gxn7qZp_characters_chapter-one.md`
+
+### Filename Format
+
+All files follow this pattern:
+
+```
+<materialized-path>_<sqid>_<doctype>_<slug>.md
 ```
 
-**Notes file (01234567.notes.md)**:
-```markdown
----
-id: 01234567
-title: "Part 1: The Beginning"
-created: 2025-09-20T15:30:00Z
-updated: 2025-09-20T15:30:00Z
----
+- `<materialized-path>`: Position in hierarchy (e.g., `100-010-001`)
+- `<sqid>`: Unique stable identifier (e.g., `Gxn7qZp`)
+- `<doctype>`: Document type (e.g., `draft`, `notes`, `characters`)
+- `<slug>`: URL-friendly version of title (e.g., `chapter-one`--human-friendly but non-canonical)
 
-# Notes for Part 1
+## Command Reference
 
-Research, character details, plot notes...
-```
-
-## Configuration
-
-### Editor Setup
-
-Set your preferred editor via environment variable:
+### Managing Nodes
 
 ```bash
-export EDITOR="code --wait"    # VS Code
-export EDITOR="vim"            # Vim
-export EDITOR="nano"           # Nano
+# Add a root-level node
+lmk add "Chapter Title"
+
+# Add a child node
+lmk add "Section Title" --child-of @ParentSQID
+
+# Add a sibling node before another
+lmk add "Prologue" --sibling-of @ChapterSQID --before
+
+# Add a sibling node after another
+lmk add "Epilogue" --sibling-of @ChapterSQID --after
 ```
 
-### Integration with Other Tools
+### Viewing Structure
 
-Linemark files are designed to work well with:
+```bash
+# Show outline as tree
+lmk list
 
-- **Git**: All files are plain text and diff-friendly
-- **Obsidian**: Files appear as individual notes with preserved frontmatter
-- **Any text editor**: Standard Markdown with YAML frontmatter
-- **Static site generators**: Compatible with Jekyll, Hugo, etc.
+# Show specific subtree
+lmk list @SQID
+
+# Show with document types
+lmk list --show-doctypes
+
+# Show with file paths
+lmk list --show-files
+
+# Output as JSON
+lmk list --json
+```
+
+### Reorganizing
+
+```bash
+# Move a node (and all its children)
+lmk move @SQID --to 200-010
+
+# Rename a node
+lmk rename @SQID "New Title"
+
+# Delete a leaf node
+lmk delete @SQID
+
+# Delete node and all descendants
+lmk delete @SQID --recursive
+
+# Delete node but promote children
+lmk delete @SQID --promote
+
+# Clean up numbering after many changes
+lmk compact
+
+# Compact specific subtree
+lmk compact @SQID
+```
+
+### Document Types
+
+```bash
+# List document types for a node
+lmk types list @SQID
+
+# Add a custom document type
+lmk types add characters @SQID
+
+# Remove a document type
+lmk types remove characters @SQID
+```
+
+### Compiling
+
+```bash
+# Compile all draft files into one document
+lmk compile draft > manuscript.md
+
+# Compile notes from a specific subtree
+lmk compile notes @SQID > part-one-notes.md
+
+# Use custom separator
+lmk compile draft --separator "===PAGE BREAK===" > printable.md
+```
+
+### Maintenance
+
+```bash
+# Validate outline integrity
+lmk doctor
+
+# Auto-repair common issues
+lmk doctor --repair
+```
+
+### Global Options
+
+All commands support:
+
+- `--directory PATH` - Operate on a different directory (default: current directory)
+- `--help` - Show command-specific help
+
+## Use Cases
+
+### Novel Writing
+
+```bash
+mkdir my-novel
+cd my-novel
+
+# Structure
+lmk add "Part One"
+lmk add "Chapter 1: The Beginning" --child-of @PartOneSQID
+lmk add "Chapter 2: The Journey" --child-of @PartOneSQID
+
+# Add character sheets
+lmk types add characters @Chapter1SQID
+lmk types add characters @Chapter2SQID
+
+# Compile manuscript
+lmk compile draft > manuscript.md
+
+# Reorganize later
+lmk move @Chapter2SQID --to 300  # Move to different part
+```
+
+### Documentation Projects
+
+```bash
+mkdir api-docs
+cd api-docs
+
+# Structure
+lmk add "Getting Started"
+lmk add "API Reference"
+lmk add "REST Endpoints" --child-of @APISQID
+lmk add "Authentication" --child-of @APISQID
+
+# Add examples as custom doctype
+lmk types add examples @EndpointsSQID
+
+# Compile for publication
+lmk compile draft --separator "\n\n" > combined-docs.md
+```
+
+### Research Projects
+
+```bash
+mkdir research
+cd research
+
+# Outline
+lmk add "Literature Review"
+lmk add "Methodology"
+lmk add "Results"
+
+# Each section gets draft + notes automatically
+# Add custom doctypes for specific needs
+lmk types add citations @LitReviewSQID
+lmk types add data @ResultsSQID
+```
 
 ## Architecture
 
-Linemark uses hexagonal (ports and adapters) architecture:
+Linemark follows hexagonal (ports and adapters) architecture:
 
-- **Domain**: Core business logic (nodes, binders, identifiers)
-- **Ports**: Interfaces for external dependencies
-- **Adapters**: File system, editor, console implementations
-- **Use Cases**: Application logic orchestrating the domain
-- **CLI**: Command-line interface layer
+- **Domain**: Core business logic (materialized paths, SQIDs, node operations)
+- **Ports**: Interfaces for external dependencies (filesystem, ID generation, etc.)
+- **Adapters**: Concrete implementations (FileSystemAdapter, SQIDGeneratorAdapter, etc.)
+- **Use Cases**: Application logic orchestrating domain operations
+- **CLI**: Command-line interface layer using Click
 
-This design ensures the core logic is independent of file systems, editors, or CLI frameworks.
+This design keeps the core logic independent of frameworks and external dependencies.
+
+## Technology Stack
+
+- **Python 3.13+** - Modern Python with full type hints
+- **Click** - Command-line interface framework
+- **sqids** - Short unique identifier generation
+- **PyYAML** - YAML frontmatter parsing
+- **python-slugify** - Title-to-slug conversion
+- **Pydantic** - Data validation and settings
 
 ## Development
 
-### Tech Stack
-
-- **Python 3.13+** with type hints
-- **Typer** for CLI framework
-- **PyYAML** for frontmatter parsing
-- **pytest** for testing with 100% coverage
-- **ruff** for formatting and linting
-- **mypy** for type checking
-
-### Development Setup
+### Setup
 
 ```bash
 # Install development dependencies
@@ -243,28 +352,108 @@ uv run ruff format src/
 
 ### Testing
 
-The project uses comprehensive testing:
+The project maintains comprehensive test coverage:
 
-- **Contract tests**: Verify API interfaces
-- **Unit tests**: Test individual components
-- **Integration tests**: Test complete workflows
-- **Performance tests**: Ensure scalability
-
-Run specific test suites:
+- **Unit tests**: Test individual components in isolation
+- **Integration tests**: Test complete workflows end-to-end
+- **Contract tests**: Verify API interfaces and port implementations
 
 ```bash
-uv run pytest tests/contract/     # Contract tests
-uv run pytest tests/unit/        # Unit tests
-uv run pytest tests/integration/ # Integration tests
-uv run pytest tests/performance/ # Performance tests
+# Run all tests
+uv run pytest
+
+# Run with coverage
+uv run pytest --cov=linemark --cov-report=html
 ```
 
+### Code Quality
+
+The project enforces strict quality standards:
+
+- 100% type coverage with mypy
+- PEP 8 compliance with 120-character line limit
+- Comprehensive test coverage
+- Hexagonal architecture with clear separation of concerns
+
+## Integration with Other Tools
+
+### Git
+
+Linemark files are designed for version control:
+
+```bash
+# Initialize git in your project
+cd my-novel
+git init
+git add .
+git commit -m "Initial outline"
+
+# All changes are plain text diffs
+lmk move @SQID --to 200
+git diff  # Shows file renames clearly
+```
+
+### Obsidian
+
+Linemark files work as Obsidian notes:
+
+- Each file appears as a separate note
+- YAML frontmatter is preserved
+- Natural hierarchy in file browser when sorted
+- Use Obsidian for editing, linemark for restructuring
+
+### Text Editors
+
+Any text editor works:
+
+- VS Code: Use the built-in Markdown preview
+- Vim: Full editing capability with Markdown plugins
+- Emacs: org-mode-like structure with Markdown syntax
+
+## Best Practices
+
+1. **Use version control**: Initialize git to track changes and enable rollback
+2. **Run compact periodically**: After major reorganizations, run `lmk compact` to restore clean numbering
+3. **Validate with doctor**: Run `lmk doctor` before committing to catch issues
+4. **Use descriptive titles**: Titles become slugs, so make them meaningful
+5. **Leverage subtree operations**: Use SQID filtering for focused work on sections
+6. **Custom document types**: Create document types that match your workflow
+7. **Compile by document type**: Use `lmk compile` to extract specific views of your content
+
+## FAQ
+
+**Q: Can I edit files manually?**
+A: Yes! All files are plain Markdown. Just preserve the YAML frontmatter and run `lmk doctor` to verify integrity.
+
+**Q: What happens to SQIDs when I move nodes?**
+A: SQIDs never change. They're stable identifiers for permanent references.
+
+**Q: Can I use nested folders?**
+A: No. Linemark uses a flat directory structure with hierarchy encoded in filenames.
+
+**Q: How do I reference another node?**
+A: Use the SQID in your content: "See @Gxn7qZp for details". The SQID never changes.
+
+**Q: What if two processes modify the same outline?**
+A: Linemark uses optimistic concurrency. Use git for conflict resolution if needed.
+
+**Q: Can I import existing Markdown files?**
+A: Not automatically in the MVP. You'll need to create nodes and copy content manually.
+
+## Documentation
+
+- [CLI Reference](docs/CLI.md) - Complete command documentation
+- [Specification](specs/001-linemark-cli-mvp/spec.md) - Detailed feature specification
+- [Architecture](src/linemark/) - Code organization and design
+
 ## Contributing
+
+Contributions welcome! Please:
 
 1. Fork the repository
 2. Create a feature branch
 3. Write tests for new functionality
-4. Ensure all tests pass and coverage remains 100%
+4. Ensure all tests and type checking pass
 5. Submit a pull request
 
 ## License
@@ -273,7 +462,6 @@ uv run pytest tests/performance/ # Performance tests
 
 ## Support
 
-For issues, feature requests, or questions:
-- File an issue on GitHub
-- Check existing documentation in the `specs/` directory
+- File issues on GitHub
+- Check [CLI Reference](docs/CLI.md) for detailed command help
 - Review test cases for usage examples
