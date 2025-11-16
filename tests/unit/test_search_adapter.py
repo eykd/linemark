@@ -20,11 +20,7 @@ def test_search_adapter_filter_by_subtree_and_doctypes(tmp_path: Path) -> None:
     (tmp_path / '200_GHI_draft_other.md').write_text('Other content')
 
     # Get files filtered by subtree "100" and doctypes ["draft", "notes"]
-    files = list(adapter.get_files_in_outline_order(
-        tmp_path,
-        subtree_sqid='100',
-        doctypes=['draft', 'notes']
-    ))
+    files = list(adapter.get_files_in_outline_order(tmp_path, subtree_sqid='100', doctypes=['draft', 'notes']))
 
     # Should include parent and child draft and notes files
     filenames = [f.name for f in files]
@@ -46,10 +42,7 @@ def test_search_adapter_filter_by_doctypes_only(tmp_path: Path) -> None:
     (tmp_path / '200_DEF_characters_other.md').write_text('Characters')
 
     # Get files filtered by doctypes only
-    files = list(adapter.get_files_in_outline_order(
-        tmp_path,
-        doctypes=['draft', 'notes']
-    ))
+    files = list(adapter.get_files_in_outline_order(tmp_path, doctypes=['draft', 'notes']))
 
     filenames = [f.name for f in files]
     assert '100_ABC_draft_test.md' in filenames
@@ -70,10 +63,7 @@ def test_search_adapter_filter_by_subtree_only(tmp_path: Path) -> None:
     (tmp_path / '200_GHI_draft_other.md').write_text('Other content')
 
     # Get files filtered by subtree only
-    files = list(adapter.get_files_in_outline_order(
-        tmp_path,
-        subtree_sqid='100'
-    ))
+    files = list(adapter.get_files_in_outline_order(tmp_path, subtree_sqid='100'))
 
     filenames = [f.name for f in files]
     assert '100_ABC_draft_test.md' in filenames

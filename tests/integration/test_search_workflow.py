@@ -21,7 +21,9 @@ def test_search_finds_text_in_draft(tmp_path: Path) -> None:
 
         # Write content to draft
         content = 'This is a test with keyword FINDME in it'
-        result2 = runner.invoke(lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content)
+        result2 = runner.invoke(
+            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content
+        )
         assert result2.exit_code == 0
 
         # Search for the keyword
@@ -43,7 +45,9 @@ def test_search_finds_text_in_notes(tmp_path: Path) -> None:
 
         # Write content to notes
         content = 'Important notes with SECRET keyword'
-        result2 = runner.invoke(lmk, ['types', 'write', 'notes', f'@{sqid}', '--directory', str(isolated_dir)], input=content)
+        result2 = runner.invoke(
+            lmk, ['types', 'write', 'notes', f'@{sqid}', '--directory', str(isolated_dir)], input=content
+        )
         assert result2.exit_code == 0
 
         # Search for the keyword
@@ -64,7 +68,9 @@ def test_search_with_regex_pattern(tmp_path: Path) -> None:
 
         # Write content with pattern
         content = 'Error: Code 123\nError: Code 456'
-        result2 = runner.invoke(lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content)
+        result2 = runner.invoke(
+            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content
+        )
         assert result2.exit_code == 0
 
         # Search with regex pattern
@@ -85,7 +91,9 @@ def test_search_case_sensitive(tmp_path: Path) -> None:
 
         # Write content with mixed case
         content = 'This has lowercase findme and UPPERCASE FINDME'
-        result2 = runner.invoke(lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content)
+        result2 = runner.invoke(
+            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content
+        )
         assert result2.exit_code == 0
 
         # Search case-sensitively for uppercase
@@ -106,12 +114,16 @@ def test_search_filter_by_doctype(tmp_path: Path) -> None:
 
         # Write content to draft
         draft_content = 'This is in the draft with KEYWORD'
-        result2 = runner.invoke(lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=draft_content)
+        result2 = runner.invoke(
+            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=draft_content
+        )
         assert result2.exit_code == 0
 
         # Write content to notes
         notes_content = 'This is in the notes with KEYWORD'
-        result3 = runner.invoke(lmk, ['types', 'write', 'notes', f'@{sqid}', '--directory', str(isolated_dir)], input=notes_content)
+        result3 = runner.invoke(
+            lmk, ['types', 'write', 'notes', f'@{sqid}', '--directory', str(isolated_dir)], input=notes_content
+        )
         assert result3.exit_code == 0
 
         # Search across all doctypes
@@ -133,7 +145,9 @@ def test_search_multiline(tmp_path: Path) -> None:
 
         # Write content with pattern on single line
         content = 'Line one two three'
-        result2 = runner.invoke(lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content)
+        result2 = runner.invoke(
+            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content
+        )
         assert result2.exit_code == 0
 
         # Search with pattern (multiline doesn't affect line-by-line search)
@@ -154,7 +168,9 @@ def test_search_literal_string(tmp_path: Path) -> None:
 
         # Write content with regex special characters
         content = 'This has regex chars: [a-z]+ and \\d+'
-        result2 = runner.invoke(lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content)
+        result2 = runner.invoke(
+            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content
+        )
         assert result2.exit_code == 0
 
         # Search literally for the pattern
@@ -175,7 +191,9 @@ def test_search_json_output(tmp_path: Path) -> None:
 
         # Write content
         content = 'This has JSONTEST keyword'
-        result2 = runner.invoke(lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content)
+        result2 = runner.invoke(
+            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content
+        )
         assert result2.exit_code == 0
 
         # Search with JSON output
@@ -224,13 +242,17 @@ def test_search_subtree_filter(tmp_path: Path) -> None:
         parent_position = result1.output.split('node ')[1].split(' ')[0]
 
         # Add child node
-        result2 = runner.invoke(lmk, ['add', 'Child', '--child-of', f'@{parent_sqid}', '--directory', str(isolated_dir)])
+        result2 = runner.invoke(
+            lmk, ['add', 'Child', '--child-of', f'@{parent_sqid}', '--directory', str(isolated_dir)]
+        )
         assert result2.exit_code == 0
         child_sqid = result2.output.split('@')[1].split(')')[0]
 
         # Write content to child
         content = 'Child content with SUBTREETEST'
-        result3 = runner.invoke(lmk, ['types', 'write', 'draft', f'@{child_sqid}', '--directory', str(isolated_dir)], input=content)
+        result3 = runner.invoke(
+            lmk, ['types', 'write', 'draft', f'@{child_sqid}', '--directory', str(isolated_dir)], input=content
+        )
         assert result3.exit_code == 0
 
         # Search within parent subtree using position prefix
@@ -251,12 +273,16 @@ def test_search_single_doctype_filter(tmp_path: Path) -> None:
 
         # Write content to draft
         draft_content = 'Draft DOCTYPE1TEST'
-        result2 = runner.invoke(lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=draft_content)
+        result2 = runner.invoke(
+            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=draft_content
+        )
         assert result2.exit_code == 0
 
         # Write content to notes (different keyword)
         notes_content = 'Notes different content'
-        result3 = runner.invoke(lmk, ['types', 'write', 'notes', f'@{sqid}', '--directory', str(isolated_dir)], input=notes_content)
+        result3 = runner.invoke(
+            lmk, ['types', 'write', 'notes', f'@{sqid}', '--directory', str(isolated_dir)], input=notes_content
+        )
         assert result3.exit_code == 0
 
         # Search across all doctypes (--doctype causes Click parsing issues with optional positional)

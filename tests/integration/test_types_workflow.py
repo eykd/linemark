@@ -197,7 +197,9 @@ def test_types_write_updates_body_content(tmp_path: Path) -> None:
 
         # Write new content to draft
         new_content = 'This is new draft content\nWith multiple lines'
-        result2 = runner.invoke(lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=new_content)
+        result2 = runner.invoke(
+            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=new_content
+        )
         assert result2.exit_code == 0
 
         # Read back and verify
@@ -218,7 +220,9 @@ def test_types_write_preserves_frontmatter(tmp_path: Path) -> None:
 
         # Write new content
         new_content = 'Updated content'
-        result2 = runner.invoke(lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=new_content)
+        result2 = runner.invoke(
+            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=new_content
+        )
         assert result2.exit_code == 0
 
         # Read the file directly and verify frontmatter is preserved
@@ -237,7 +241,9 @@ def test_types_write_nonexistent_node_fails(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Try to write to nonexistent node
-        result = runner.invoke(lmk, ['types', 'write', 'draft', '@NONEXIST', '--directory', str(isolated_dir)], input='test')
+        result = runner.invoke(
+            lmk, ['types', 'write', 'draft', '@NONEXIST', '--directory', str(isolated_dir)], input='test'
+        )
         assert result.exit_code != 0
         assert 'Error' in result.output
 
@@ -253,6 +259,8 @@ def test_types_write_nonexistent_doctype_fails(tmp_path: Path) -> None:
         sqid = result1.output.split('@')[1].split(')')[0]
 
         # Try to write to nonexistent type
-        result2 = runner.invoke(lmk, ['types', 'write', 'nonexistent', f'@{sqid}', '--directory', str(isolated_dir)], input='test')
+        result2 = runner.invoke(
+            lmk, ['types', 'write', 'nonexistent', f'@{sqid}', '--directory', str(isolated_dir)], input='test'
+        )
         assert result2.exit_code != 0
         assert 'Error' in result2.output
