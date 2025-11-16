@@ -118,7 +118,7 @@ class ValidateOutlineUseCase:
             if self.filesystem.file_exists(draft_path):
                 content = self.filesystem.read_file(draft_path)
                 parts = content.split('---')
-                if len(parts) >= 3:  # noqa: PLR2004
+                if len(parts) >= 3:
                     frontmatter = yaml.safe_load(parts[1])
                     title = frontmatter.get('title', 'Untitled')
                 else:

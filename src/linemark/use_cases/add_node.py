@@ -108,7 +108,7 @@ class AddNodeUseCase:
 
         return outline
 
-    def _extract_title_from_frontmatter(self, content: str) -> str:  # noqa: PLR6301
+    def _extract_title_from_frontmatter(self, content: str) -> str:
         """Extract title from YAML frontmatter.
 
         Args:
@@ -122,7 +122,7 @@ class AddNodeUseCase:
             return 'Untitled'
 
         parts = content.split('---\n', 2)
-        if len(parts) < 3:  # noqa: PLR2004
+        if len(parts) < 3:
             return 'Untitled'
 
         frontmatter = parts[1]

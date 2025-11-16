@@ -312,7 +312,7 @@ class Outline(BaseModel):
         # Tier 100: for first 9 siblings (100, 200, 300, ..., 900)
         # Tier 10: for next 90 siblings (010-900 in 10s)
         # Tier 1: for remaining siblings (1-unit increments)
-        tier = 100 if len(siblings) < 9 else (10 if len(siblings) < 99 else 1)  # noqa: PLR2004
+        tier = 100 if len(siblings) < 9 else (10 if len(siblings) < 99 else 1)
         return max_position + tier
 
     def add_node(self, node: Node) -> None:

@@ -69,3 +69,20 @@ class DoctypeNotFoundError(LinemarkError):
         )
         self.doctype = doctype
         self.sqid = sqid
+
+
+class InvalidRegexError(LinemarkError):
+    """Raised when a regex pattern is invalid and cannot be compiled.
+
+    This error is raised during search operations when the user provides
+    a regex pattern that doesn't compile (e.g., syntax errors, unbalanced
+    brackets, invalid escape sequences).
+    """
+
+
+class SearchError(LinemarkError):
+    """Raised when search operations fail.
+
+    This error is raised for general search failures not covered by
+    more specific exceptions (e.g., InvalidRegexError, NodeNotFoundError).
+    """

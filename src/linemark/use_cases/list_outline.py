@@ -36,7 +36,7 @@ class ListOutlineUseCase:
         """
         self.filesystem = filesystem
 
-    def _extract_title_from_frontmatter(self, content: str) -> str:  # noqa: PLR6301
+    def _extract_title_from_frontmatter(self, content: str) -> str:
         """Extract title from YAML frontmatter.
 
         Args:
@@ -50,7 +50,7 @@ class ListOutlineUseCase:
             return 'Untitled'
 
         parts = content.split('---\n', 2)
-        if len(parts) < 3:  # noqa: PLR2004  # pragma: no cover
+        if len(parts) < 3:  # pragma: no cover
             return 'Untitled'
 
         frontmatter = parts[1]
@@ -150,7 +150,7 @@ class ListOutlineUseCase:
         # Get subtree
         return self._get_subtree(root_node, all_nodes)
 
-    def _is_orphaned(self, node: Node, all_nodes: list[Node]) -> bool:  # noqa: PLR6301
+    def _is_orphaned(self, node: Node, all_nodes: list[Node]) -> bool:
         """Check if node is orphaned (parent doesn't exist).
 
         Args:
@@ -169,7 +169,7 @@ class ListOutlineUseCase:
         parent_mp = node.mp.parent()
         return not any(n.mp == parent_mp for n in all_nodes)
 
-    def _get_subtree(self, root_node: Node, all_nodes: list[Node]) -> list[Node]:  # noqa: PLR6301
+    def _get_subtree(self, root_node: Node, all_nodes: list[Node]) -> list[Node]:
         """Get subtree rooted at the given node.
 
         Args:

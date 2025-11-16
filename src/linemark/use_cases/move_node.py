@@ -92,7 +92,7 @@ class MoveNodeUseCase:
 
         return outline
 
-    def _extract_title_from_frontmatter(self, content: str) -> str:  # noqa: PLR6301
+    def _extract_title_from_frontmatter(self, content: str) -> str:
         """Extract title from YAML frontmatter.
 
         Args:
@@ -106,7 +106,7 @@ class MoveNodeUseCase:
             return 'Untitled'  # pragma: no cover
 
         parts = content.split('---\n', 2)
-        if len(parts) < 3:  # noqa: PLR2004
+        if len(parts) < 3:
             return 'Untitled'  # pragma: no cover
 
         frontmatter = parts[1]
@@ -176,7 +176,7 @@ class MoveNodeUseCase:
                 # Rename file
                 self.filesystem.rename_file(old_path, new_path)
 
-    def _is_descendant_of(self, node: Node, ancestor_mp: MaterializedPath) -> bool:  # noqa: PLR6301
+    def _is_descendant_of(self, node: Node, ancestor_mp: MaterializedPath) -> bool:
         """Check if node is a descendant of the given materialized path.
 
         Args:

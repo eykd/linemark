@@ -43,7 +43,7 @@ class CompileDoctypeUseCase:
         """
         self.filesystem = filesystem
 
-    def _extract_title_from_frontmatter(self, content: str) -> str:  # noqa: PLR6301
+    def _extract_title_from_frontmatter(self, content: str) -> str:
         """Extract title from YAML frontmatter.
 
         Args:
@@ -57,7 +57,7 @@ class CompileDoctypeUseCase:
             return 'Untitled'  # pragma: no cover
 
         parts = content.split('---\n', 2)
-        if len(parts) < 3:  # noqa: PLR2004
+        if len(parts) < 3:
             return 'Untitled'  # pragma: no cover
 
         frontmatter = parts[1]
@@ -119,7 +119,7 @@ class CompileDoctypeUseCase:
         # Return nodes sorted by materialized path
         return sorted(nodes_by_sqid.values(), key=lambda n: n.mp.as_string)
 
-    def _filter_subtree(self, nodes: list[Node], sqid: str) -> list[Node]:  # noqa: PLR6301
+    def _filter_subtree(self, nodes: list[Node], sqid: str) -> list[Node]:
         """Filter nodes to only include subtree rooted at given SQID.
 
         Args:
@@ -156,7 +156,7 @@ class CompileDoctypeUseCase:
 
         return subtree_nodes
 
-    def _validate_doctype_exists(self, nodes: list[Node], doctype: str, sqid: str | None) -> None:  # noqa: PLR6301
+    def _validate_doctype_exists(self, nodes: list[Node], doctype: str, sqid: str | None) -> None:
         """Validate that doctype exists in at least one node.
 
         Args:
@@ -175,7 +175,7 @@ class CompileDoctypeUseCase:
         # Not found - raise error
         raise DoctypeNotFoundError(doctype=doctype, sqid=sqid)
 
-    def _is_empty_content(self, content: str) -> bool:  # noqa: PLR6301
+    def _is_empty_content(self, content: str) -> bool:
         """Check if content is empty or whitespace-only.
 
         This method checks the actual content after frontmatter.
@@ -194,7 +194,7 @@ class CompileDoctypeUseCase:
         # Strip frontmatter if present
         if content.startswith('---\n'):
             parts = content.split('---\n', 2)
-            if len(parts) >= 3:  # noqa: PLR2004
+            if len(parts) >= 3:
                 # Get content after frontmatter
                 actual_content = parts[2]
                 return not actual_content or actual_content.isspace()
@@ -202,7 +202,7 @@ class CompileDoctypeUseCase:
         # No frontmatter - check content directly
         return content.isspace()  # pragma: no cover
 
-    def _get_doctype_filepath(self, directory: Path, node: Node, doctype: str) -> Path:  # noqa: PLR6301
+    def _get_doctype_filepath(self, directory: Path, node: Node, doctype: str) -> Path:
         """Build filepath for a node's doctype file.
 
         Args:
@@ -218,7 +218,7 @@ class CompileDoctypeUseCase:
         filename = f'{node.mp.as_string}_{node.sqid.value}_{doctype}_{node.slug}.md'
         return directory / filename
 
-    def _process_separator(self, separator: str) -> str:  # noqa: PLR6301
+    def _process_separator(self, separator: str) -> str:
         r"""Process separator to interpret escape sequences.
 
         Args:

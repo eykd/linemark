@@ -80,7 +80,7 @@ class CompactOutlineUseCase:
 
         # Calculate new MPs using tiered redistribution
         count = len(siblings)
-        tier = 100 if count <= 9 else (10 if count <= 99 else 1)  # noqa: PLR2004
+        tier = 100 if count <= 9 else (10 if count <= 99 else 1)
 
         # Create rename map: sqid -> (node, new_mp)
         rename_map: list[tuple[Node, tuple[int, ...]]] = []
@@ -168,7 +168,7 @@ class CompactOutlineUseCase:
             if self.filesystem.file_exists(draft_path):
                 content = self.filesystem.read_file(draft_path)
                 parts = content.split('---')
-                if len(parts) >= 3:  # noqa: PLR2004
+                if len(parts) >= 3:
                     frontmatter = yaml.safe_load(parts[1])
                     title = frontmatter.get('title', 'Untitled')
                 else:

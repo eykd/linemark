@@ -8,10 +8,13 @@ from pathlib import Path
 import click
 
 from linemark.adapters.filesystem import FileSystemAdapter
+from linemark.adapters.read_type_adapter import ReadTypeAdapter
+from linemark.adapters.search_adapter import SearchAdapter
 from linemark.adapters.slugifier import SlugifierAdapter
 from linemark.adapters.sqid_generator import SQIDGeneratorAdapter
+from linemark.adapters.write_type_adapter import WriteTypeAdapter
 from linemark.cli.formatters import format_json, format_tree
-from linemark.domain.exceptions import DoctypeNotFoundError, NodeNotFoundError
+from linemark.domain.exceptions import DoctypeNotFoundError, InvalidRegexError, NodeNotFoundError
 from linemark.use_cases.add_node import AddNodeUseCase
 from linemark.use_cases.compact_outline import CompactOutlineUseCase
 from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
@@ -19,8 +22,11 @@ from linemark.use_cases.delete_node import DeleteNodeUseCase
 from linemark.use_cases.list_outline import ListOutlineUseCase
 from linemark.use_cases.manage_types import ManageTypesUseCase
 from linemark.use_cases.move_node import MoveNodeUseCase
+from linemark.use_cases.read_type import ReadTypeUseCase
 from linemark.use_cases.rename_node import RenameNodeUseCase
+from linemark.use_cases.search import SearchUseCase
 from linemark.use_cases.validate_outline import ValidateOutlineUseCase
+from linemark.use_cases.write_type import WriteTypeUseCase
 
 
 @click.group()
@@ -582,6 +588,132 @@ def doctor(repair: bool, directory: Path) -> None:  # noqa: FBT001
         sys.exit(1)  # pragma: no cover
 
 
+@lmk.command()
+@click.argument('pattern')
+@click.argument('subtree_sqid', required=False)
+@click.option(
+    '--doctype',
+    'doctypes',
+    multiple=True,
+    help='Filter by document type (can specify multiple times)',
+)
+@click.option(
+    '--case-sensitive',
+    is_flag=True,
+    help='Match case exactly (default: case-insensitive)',
+)
+@click.option(
+    '--multiline',
+    is_flag=True,
+    help='Allow . to match newlines (re.DOTALL flag)',
+)
+@click.option(
+    '--literal',
+    is_flag=True,
+    help='Treat pattern as literal string (escape regex)',
+)
+@click.option(
+    '--json',
+    'output_json',
+    is_flag=True,
+    help='Output results as JSON (one per line)',
+)
+@click.option(
+    '--directory',
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=Path.cwd(),
+    help='Working directory (default: current directory)',
+)
+def search(
+    pattern: str,
+    subtree_sqid: str | None,
+    doctypes: tuple[str, ...],
+    case_sensitive: bool,  # noqa: FBT001
+    multiline: bool,  # noqa: FBT001
+    literal: bool,  # noqa: FBT001
+    output_json: bool,  # noqa: FBT001
+    directory: Path,
+) -> None:
+    """Search for patterns across the outline.
+
+    Search for regex or literal patterns across document type files,
+    with optional filtering by subtree and doctype. Results are returned
+    in outline order.
+
+    \b
+    Examples:
+
+        \b
+        # Search for a pattern across all files
+        lmk search "TODO"
+
+        \b
+        # Search within a subtree (100-200 and descendants)
+        lmk search "character" 100-200
+
+        \b
+        # Search only in notes doctypes
+        lmk search "plot" --doctype notes
+
+        \b
+        # Search with multiple doctypes
+        lmk search "scene" --doctype notes --doctype characters
+
+        \b
+        # Case-sensitive search
+        lmk search "API" --case-sensitive
+
+        \b
+        # Multiline regex (allow . to match newlines)
+        lmk search "start.*end" --multiline
+
+        \b
+        # Literal string search (escape regex)
+        lmk search "[TODO]" --literal
+
+        \b
+        # Output as JSON
+        lmk search "error" --json
+
+    """
+    try:
+        # Strip @ prefix from subtree_sqid if provided
+        if subtree_sqid:
+            subtree_sqid = subtree_sqid.lstrip('@')
+
+        # Convert doctypes tuple to list or None
+        doctype_list = list(doctypes) if doctypes else None
+
+        # Create adapter
+        search_adapter = SearchAdapter()
+
+        # Execute use case
+        use_case = SearchUseCase(search_port=search_adapter)
+        results = use_case.execute(
+            pattern=pattern,
+            directory=directory,
+            subtree_sqid=subtree_sqid,
+            doctypes=doctype_list,
+            case_sensitive=case_sensitive,
+            multiline=multiline,
+            literal=literal,
+        )
+
+        # Output results
+        for result in results:
+            if output_json:
+                click.echo(use_case.format_json(result))
+            else:
+                click.echo(use_case.format_plaintext(result))
+
+    except InvalidRegexError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+    except (FileNotFoundError, PermissionError, UnicodeDecodeError) as e:  # pragma: no cover
+        click.echo(f'Error: {e}', err=True)  # pragma: no cover
+        sys.exit(2)  # pragma: no cover
+
+
 @lmk.group()
 def types() -> None:
     """Manage document types for outline nodes.
@@ -716,6 +848,115 @@ def types_remove(doc_type: str, sqid: str, directory: Path) -> None:
     except ValueError as e:
         click.echo(f'Error: {e}', err=True)
         sys.exit(1)
+
+
+@types.command('read')
+@click.argument('doctype')
+@click.argument('sqid')
+@click.option(
+    '--directory',
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=Path.cwd(),
+    help='Working directory (default: current directory)',
+)
+def types_read(doctype: str, sqid: str, directory: Path) -> None:
+    """Read the body content of a document type.
+
+    Read the body of the file for the specified document type.
+
+    \b
+    Examples:
+
+        \b
+        # Read the characters type of a node
+        lmk types read characters @SQID1
+
+    """
+    try:
+        # Strip @ prefix if provided
+        sqid_clean = sqid.lstrip('@')
+
+        # Create adapter
+        read_adapter = ReadTypeAdapter()
+
+        # Execute use case
+        use_case = ReadTypeUseCase(read_type_port=read_adapter)
+        body = use_case.execute(
+            sqid=sqid_clean,
+            doctype=doctype,
+            directory=directory,
+        )
+
+        # Output body to stdout
+        click.echo(body)
+
+    except NodeNotFoundError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+    except DoctypeNotFoundError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+    except (OSError, PermissionError, UnicodeDecodeError, ValueError) as e:  # pragma: no cover
+        click.echo(f'Error: {e}', err=True)  # pragma: no cover
+        sys.exit(2)  # pragma: no cover
+
+
+@types.command('write')
+@click.argument('doctype')
+@click.argument('sqid')
+@click.option(
+    '--directory',
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=Path.cwd(),
+    help='Working directory (default: current directory)',
+)
+def types_write(doctype: str, sqid: str, directory: Path) -> None:
+    """Write body content to a document type from stdin.
+
+    Write the body content from stdin to the specified document type file,
+    preserving existing YAML frontmatter. The write is atomic using a
+    temporary file and rename operation.
+
+    \b
+    Examples:
+
+        \b
+        # Write content to the notes type of a node
+        echo "New content" | lmk types write notes @SQID1
+
+        \b
+        # Write empty content (clear the body)
+        echo -n "" | lmk types write notes @SQID1
+
+    """
+    try:
+        # Strip @ prefix if provided
+        sqid_clean = sqid.lstrip('@')
+
+        # Read body content from stdin
+        body = sys.stdin.read()
+
+        # Create adapter
+        write_adapter = WriteTypeAdapter()
+
+        # Execute use case
+        use_case = WriteTypeUseCase(write_type_port=write_adapter)
+        use_case.execute(
+            sqid=sqid_clean,
+            doctype=doctype,
+            body=body,
+            directory=directory,
+        )
+
+    except NodeNotFoundError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+    except DoctypeNotFoundError as e:
+        click.echo(f'Error: {e}', err=True)
+        sys.exit(1)
+    except (OSError, PermissionError, UnicodeDecodeError, ValueError) as e:  # pragma: no cover
+        click.echo(f'Error: {e}', err=True)  # pragma: no cover
+        sys.exit(2)  # pragma: no cover
 
 
 def main() -> None:

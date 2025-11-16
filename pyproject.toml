@@ -107,6 +107,7 @@ module-root = "src"
 line-length = 120
 src = ["src"]
 target-version = "py312"
+exclude = ["specs/"]
 
 [tool.ruff.lint]
 preview = true
@@ -170,16 +171,18 @@ select = [
 
 
 ignore = [
-    "COM812", # https://docs.astral.sh/ruff/rules/missing-trailing-comma/
-    "D105",   # https://docs.astral.sh/ruff/rules/undocumented-magic-method/
-    "D106",   # https://docs.astral.sh/ruff/rules/undocumented-public-nested-class/
-    "D107",   # https://docs.astral.sh/ruff/rules/undocumented-public-init/
-    "D203",   # https://docs.astral.sh/ruff/rules/one-blank-line-before-class/
-    "D213",   # https://docs.astral.sh/ruff/rules/multi-line-summary-second-line/
-    "D400",   # https://docs.astral.sh/ruff/rules/ends-in-period/
-    "D401",   # https://docs.astral.sh/ruff/rules/non-imperative-mood/
-    "D404",   # https://docs.astral.sh/ruff/rules/docstring-starts-with-this/
-    "D415",   # https://docs.astral.sh/ruff/rules/ends-in-punctuation/
+    "COM812",  # https://docs.astral.sh/ruff/rules/missing-trailing-comma/
+    "D105",    # https://docs.astral.sh/ruff/rules/undocumented-magic-method/
+    "D106",    # https://docs.astral.sh/ruff/rules/undocumented-public-nested-class/
+    "D107",    # https://docs.astral.sh/ruff/rules/undocumented-public-init/
+    "D203",    # https://docs.astral.sh/ruff/rules/one-blank-line-before-class/
+    "D213",    # https://docs.astral.sh/ruff/rules/multi-line-summary-second-line/
+    "D400",    # https://docs.astral.sh/ruff/rules/ends-in-period/
+    "D401",    # https://docs.astral.sh/ruff/rules/non-imperative-mood/
+    "D404",    # https://docs.astral.sh/ruff/rules/docstring-starts-with-this/
+    "D415",    # https://docs.astral.sh/ruff/rules/ends-in-punctuation/
+    "PLR2004", # https://docs.astral.sh/ruff/rules/magic-value-comparison/ (acceptable for frontmatter parsing)
+    "PLR6301", # https://docs.astral.sh/ruff/rules/no-self-use/ (methods implement protocol interfaces)
     "E501",   # https://docs.astral.sh/ruff/rules/line-too-long/
     "EM101",  # https://docs.astral.sh/ruff/rules/raw-string-in-exception/
     "FURB189", # https://docs.astral.sh/ruff/rules/subclass-builtin/
@@ -203,6 +206,9 @@ unfixable = []
 [tool.ruff.lint.per-file-ignores]
 "src/linemark/cli/*.py" = [
     "D301",  # backslashes, e.g. \b, in CLI docstrings
+]
+"src/linemark/ports/search.py" = [
+    "TC003",  # Path used at runtime in SearchResult model
 ]
 "tests/**/test*.py" = [
     "S101",
@@ -228,6 +234,7 @@ unfixable = []
     "PT017",    # Assertions on exception in except blocks - acceptable test pattern
     "RET504",   # Unnecessary assignment before return - acceptable for clarity in tests
     "PT011",    # Broad pytest.raises - acceptable in contract tests
+    "TC003",    # Path used at runtime in test functions
 ]
 
 

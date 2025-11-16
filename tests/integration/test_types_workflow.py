@@ -139,3 +139,120 @@ def test_types_remove_required_type_fails(tmp_path: Path) -> None:
         result3 = runner.invoke(lmk, ['types', 'remove', 'notes', f'@{sqid}', '--directory', str(isolated_dir)])
         assert result3.exit_code != 0
         assert 'Cannot remove required type' in result3.output
+
+
+def test_types_read_returns_body_content(tmp_path: Path) -> None:
+    """Test reading type returns body content without frontmatter."""
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
+        # Add a node
+        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
+        assert result1.exit_code == 0
+        sqid = result1.output.split('@')[1].split(')')[0]
+
+        # Read draft type (should have default content)
+        result2 = runner.invoke(lmk, ['types', 'read', 'draft', f'@{sqid}', '--directory', str(isolated_dir)])
+        assert result2.exit_code == 0
+        # Should not contain frontmatter markers
+        assert '---' not in result2.output or result2.output.count('---') < 2
+
+
+def test_types_read_nonexistent_node_fails(tmp_path: Path) -> None:
+    """Test reading type for nonexistent node fails."""
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
+        # Try to read from nonexistent node
+        result = runner.invoke(lmk, ['types', 'read', 'draft', '@NONEXIST', '--directory', str(isolated_dir)])
+        assert result.exit_code != 0
+        assert 'Error' in result.output
+
+
+def test_types_read_nonexistent_doctype_fails(tmp_path: Path) -> None:
+    """Test reading nonexistent doctype fails."""
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
+        # Add a node
+        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
+        assert result1.exit_code == 0
+        sqid = result1.output.split('@')[1].split(')')[0]
+
+        # Try to read nonexistent type
+        result2 = runner.invoke(lmk, ['types', 'read', 'nonexistent', f'@{sqid}', '--directory', str(isolated_dir)])
+        assert result2.exit_code != 0
+        assert 'Error' in result2.output
+
+
+def test_types_write_updates_body_content(tmp_path: Path) -> None:
+    """Test writing type updates body content."""
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
+        # Add a node
+        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
+        assert result1.exit_code == 0
+        sqid = result1.output.split('@')[1].split(')')[0]
+
+        # Write new content to draft
+        new_content = 'This is new draft content\nWith multiple lines'
+        result2 = runner.invoke(lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=new_content)
+        assert result2.exit_code == 0
+
+        # Read back and verify
+        result3 = runner.invoke(lmk, ['types', 'read', 'draft', f'@{sqid}', '--directory', str(isolated_dir)])
+        assert result3.exit_code == 0
+        assert new_content in result3.output
+
+
+def test_types_write_preserves_frontmatter(tmp_path: Path) -> None:
+    """Test writing type preserves YAML frontmatter."""
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
+        # Add a node
+        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
+        assert result1.exit_code == 0
+        sqid = result1.output.split('@')[1].split(')')[0]
+
+        # Write new content
+        new_content = 'Updated content'
+        result2 = runner.invoke(lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=new_content)
+        assert result2.exit_code == 0
+
+        # Read the file directly and verify frontmatter is preserved
+        cwd = Path.cwd()
+        draft_files = list(cwd.glob(f'*_{sqid}_draft_*.md'))
+        assert len(draft_files) == 1
+        content = draft_files[0].read_text()
+        assert content.startswith('---\n')
+        assert 'title:' in content
+        assert new_content in content
+
+
+def test_types_write_nonexistent_node_fails(tmp_path: Path) -> None:
+    """Test writing to nonexistent node fails."""
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
+        # Try to write to nonexistent node
+        result = runner.invoke(lmk, ['types', 'write', 'draft', '@NONEXIST', '--directory', str(isolated_dir)], input='test')
+        assert result.exit_code != 0
+        assert 'Error' in result.output
+
+
+def test_types_write_nonexistent_doctype_fails(tmp_path: Path) -> None:
+    """Test writing to nonexistent doctype fails."""
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
+        # Add a node
+        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
+        assert result1.exit_code == 0
+        sqid = result1.output.split('@')[1].split(')')[0]
+
+        # Try to write to nonexistent type
+        result2 = runner.invoke(lmk, ['types', 'write', 'nonexistent', f'@{sqid}', '--directory', str(isolated_dir)], input='test')
+        assert result2.exit_code != 0
+        assert 'Error' in result2.output
