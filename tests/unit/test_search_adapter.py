@@ -146,3 +146,26 @@ def test_search_adapter_search_outline(tmp_path: Path) -> None:
     assert all('Keyword' in r.content for r in results)
     assert any('draft' in r.filename for r in results)
     assert any('notes' in r.filename for r in results)
+
+
+def test_search_adapter_handles_non_utf8_encoding(tmp_path: Path) -> None:
+    """Test searching files with non-UTF-8 encoding (Windows-1252)."""
+    adapter = SearchAdapter()
+
+    # Create a file with Windows-1252 encoding containing smart quotes
+    # Byte 0x92 is a right single quotation mark in Windows-1252
+    test_file = tmp_path / '100_ABC_draft_test.md'
+    # Write raw bytes: "Line 1: It" + 0x92 (smart quote) + "s a test"
+    content_bytes = b'Line 1: It\x92s a test'
+    test_file.write_bytes(content_bytes)
+
+    # Compile pattern to search for the content
+    pattern = re.compile(r'test')
+
+    # Search file - should not raise UnicodeDecodeError
+    matches = list(adapter.search_file(test_file, pattern))
+
+    # Should find the match despite encoding difference
+    assert len(matches) == 1
+    assert matches[0][0] == 1  # Line number
+    assert 'test' in matches[0][1]  # Content contains 'test'

@@ -290,3 +290,25 @@ def test_search_single_doctype_filter(tmp_path: Path) -> None:
         assert result4.exit_code == 0
         assert 'DOCTYPE1TEST' in result4.output
         assert 'draft' in result4.output
+
+
+def test_search_handles_non_utf8_encoding(tmp_path: Path) -> None:
+    """Test search handles files with non-UTF-8 encoding (Windows-1252 smart quotes)."""
+    runner = CliRunner()
+
+    # Create a file directly with non-UTF-8 encoding (simulate Windows-1252 smart quote)
+    # Byte 0x92 is a right single quotation mark in Windows-1252
+    test_dir = tmp_path / 'test_encoding'
+    test_dir.mkdir()
+
+    # Create a file with Windows-1252 encoded smart quote
+    file_path = test_dir / '100_ABC_draft_test.md'
+    # Write frontmatter + body with byte 0x92 (Windows-1252 smart quote)
+    content_bytes = b'---\ntitle: Test\n---\nIt\x92s a searchable test'
+    file_path.write_bytes(content_bytes)
+
+    # Search should not crash on encoding errors
+    result = runner.invoke(lmk, ['search', 'searchable', '--directory', str(test_dir)])
+    assert result.exit_code == 0
+    assert 'searchable' in result.output
+    assert 'ABC' in result.output  # SQID should be extracted

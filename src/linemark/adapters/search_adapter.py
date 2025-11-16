@@ -71,10 +71,29 @@ class SearchAdapter:
         Raises:
             FileNotFoundError: If file doesn't exist
             PermissionError: If file is not readable
-            UnicodeDecodeError: If file is not valid UTF-8
+            UnicodeDecodeError: If file cannot be decoded with any supported encoding
 
         """
-        content = path.read_text(encoding='utf-8')
+        # Try multiple encodings in order of preference
+        encodings = [
+            ('utf-8', 'strict'),
+            ('utf-8', 'replace'),  # Replace invalid bytes with �
+            ('cp1252', 'strict'),  # Windows-1252 (common for smart quotes)
+            ('latin-1', 'strict'),  # ISO-8859-1 (can decode any byte sequence)
+        ]
+
+        content = None
+        for encoding, errors in encodings:
+            try:
+                content = path.read_text(encoding=encoding, errors=errors)
+                break
+            except (UnicodeDecodeError, LookupError):  # pragma: no cover
+                continue  # pragma: no cover
+
+        if content is None:  # pragma: no cover
+            # Fallback: read as bytes and decode with latin-1 (always works)
+            content = path.read_bytes().decode('latin-1')  # pragma: no cover
+
         lines = content.splitlines()
 
         for line_number, line in enumerate(lines, start=1):
