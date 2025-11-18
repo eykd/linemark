@@ -7,6 +7,7 @@ line-by-line matching, and result ordering.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
 
@@ -36,6 +37,27 @@ class SearchResult(BaseModel):
     path: Path
 
     model_config = ConfigDict(arbitrary_types_allowed=True)  # Allow Path type
+
+    def format_plaintext(self) -> str:
+        """Format a search result as plaintext.
+
+        Returns:
+            Formatted string: 'filename:line_number:content'
+
+        """
+        return f'{self.filename}:{self.line_number}:{self.content}'
+
+    def format_json(self) -> str:
+        """Format a search result as JSON.
+
+        Returns:
+            JSON string with sqid, filename, line_number, content, path
+
+        """
+        data = self.model_dump()
+        # Convert Path to string for JSON serialization
+        data['path'] = str(data['path'])
+        return json.dumps(data)
 
 
 class SearchPort(Protocol):

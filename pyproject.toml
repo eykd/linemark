@@ -357,6 +357,10 @@ plugins = [
 ]
 mypy_path = "src"
 
+[[tool.mypy.overrides]]
+module = "pytest_textual_snapshot"
+ignore_missing_imports = true
+
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/linemark"]

@@ -6,7 +6,6 @@ across the outline with optional filtering.
 
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -80,34 +79,3 @@ class SearchUseCase:
             subtree_sqid=subtree_sqid,
             doctypes=doctypes,
         )
-
-    def format_plaintext(self, result: SearchResult) -> str:
-        """Format a search result as plaintext.
-
-        Args:
-            result: Search result to format
-
-        Returns:
-            Formatted string: 'filename:line_number:content'
-
-        """
-        return f'{result.filename}:{result.line_number}:{result.content}'
-
-    def format_json(self, result: SearchResult) -> str:
-        """Format a search result as JSON.
-
-        Args:
-            result: Search result to format
-
-        Returns:
-            JSON string with sqid, filename, line_number, content, path
-
-        """
-        data = {
-            'sqid': result.sqid,
-            'filename': result.filename,
-            'line_number': result.line_number,
-            'content': result.content,
-            'path': str(result.path),
-        }
-        return json.dumps(data)
