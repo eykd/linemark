@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import AsyncIterator
     from pathlib import Path
 
     from linemark.ports.search import SearchPort, SearchResult
@@ -32,7 +32,7 @@ class SearchUseCase:
         """
         self.search_port = search_port
 
-    def execute(
+    async def execute(
         self,
         pattern: str,
         directory: Path,
@@ -42,7 +42,7 @@ class SearchUseCase:
         case_sensitive: bool = False,
         multiline: bool = False,
         literal: bool = False,
-    ) -> Iterator[SearchResult]:
+    ) -> AsyncIterator[SearchResult]:
         """Execute search operation.
 
         Args:
@@ -72,10 +72,13 @@ class SearchUseCase:
             literal=literal,
         )
 
-        # Search outline
-        yield from self.search_port.search_outline(
+        # Search outline and yield results
+        search_results = self.search_port.search_outline(
             compiled_pattern,
             directory,
             subtree_sqid=subtree_sqid,
             doctypes=doctypes,
         )
+
+        async for result in search_results:
+            yield result

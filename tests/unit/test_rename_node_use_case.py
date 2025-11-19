@@ -17,7 +17,7 @@ class FakeFileSystem:
         """Initialize with empty file storage."""
         self.files: dict[str, str] = {}
 
-    def list_markdown_files(self, directory: Path) -> list[Path]:
+    async def list_markdown_files(self, directory: Path) -> list[Path]:
         """List all .md files in directory."""
         return [
             Path(filepath)
@@ -25,30 +25,30 @@ class FakeFileSystem:
             if filepath.startswith(str(directory)) and filepath.endswith('.md')
         ]
 
-    def file_exists(self, filepath: Path) -> bool:
+    async def file_exists(self, filepath: Path) -> bool:
         """Check if file exists."""
         return str(filepath) in self.files
 
-    def read_file(self, filepath: Path) -> str:
+    async def read_file(self, filepath: Path) -> str:
         """Read file content."""
         return self.files.get(str(filepath), '')
 
-    def write_file(self, filepath: Path, content: str) -> None:
+    async def write_file(self, filepath: Path, content: str) -> None:
         """Write file content."""
         self.files[str(filepath)] = content
 
-    def delete_file(self, filepath: Path) -> None:
+    async def delete_file(self, filepath: Path) -> None:
         """Delete file."""
         if str(filepath) in self.files:
             del self.files[str(filepath)]
 
-    def rename_file(self, old_path: Path, new_path: Path) -> None:
+    async def rename_file(self, old_path: Path, new_path: Path) -> None:
         """Rename file."""
         if str(old_path) in self.files:
             self.files[str(new_path)] = self.files[str(old_path)]
             del self.files[str(old_path)]
 
-    def create_directory(self, directory: Path) -> None:
+    async def create_directory(self, directory: Path) -> None:
         """Create directory (no-op for fake filesystem)."""
 
 
@@ -60,7 +60,8 @@ class FakeSlugifier:
         return text.lower().replace(' ', '-').replace('_', '-')
 
 
-def test_rename_node_updates_title_in_frontmatter() -> None:
+@pytest.mark.asyncio
+async def test_rename_node_updates_title_in_frontmatter() -> None:
     """Test renaming updates the title in draft file frontmatter."""
     fs = FakeFileSystem()
     directory = Path('/test')
@@ -78,7 +79,7 @@ Content here
     use_case = RenameNodeUseCase(filesystem=fs, slugifier=slugifier)
 
     # Act - rename to new title
-    use_case.execute(sqid='SQID1', new_title='Chapter Two', directory=directory)
+    await use_case.execute(sqid='SQID1', new_title='Chapter Two', directory=directory)
 
     # Assert - frontmatter updated
     draft_content = fs.files[str(directory / '100_SQID1_draft_chapter-two.md')]
@@ -86,7 +87,8 @@ Content here
     assert frontmatter['title'] == 'Chapter Two'
 
 
-def test_rename_node_generates_new_slug() -> None:
+@pytest.mark.asyncio
+async def test_rename_node_generates_new_slug() -> None:
     """Test renaming generates new slug from new title."""
     fs = FakeFileSystem()
     directory = Path('/test')
@@ -102,7 +104,7 @@ title: Old Title
     use_case = RenameNodeUseCase(filesystem=fs, slugifier=slugifier)
 
     # Act
-    use_case.execute(sqid='SQID1', new_title='New Amazing Title', directory=directory)
+    await use_case.execute(sqid='SQID1', new_title='New Amazing Title', directory=directory)
 
     # Assert - new slug generated
     assert str(directory / '100_SQID1_draft_new-amazing-title.md') in fs.files
@@ -112,7 +114,8 @@ title: Old Title
     assert str(directory / '100_SQID1_notes_old-title.md') not in fs.files
 
 
-def test_rename_node_renames_all_document_types() -> None:
+@pytest.mark.asyncio
+async def test_rename_node_renames_all_document_types() -> None:
     """Test renaming updates filenames for all document types."""
     fs = FakeFileSystem()
     directory = Path('/test')
@@ -130,7 +133,7 @@ title: Chapter One
     use_case = RenameNodeUseCase(filesystem=fs, slugifier=slugifier)
 
     # Act
-    use_case.execute(sqid='SQID1', new_title='Chapter Two', directory=directory)
+    await use_case.execute(sqid='SQID1', new_title='Chapter Two', directory=directory)
 
     # Assert - all files renamed
     assert str(directory / '100_SQID1_draft_chapter-two.md') in fs.files
@@ -142,7 +145,8 @@ title: Chapter One
     assert str(directory / '100_SQID1_notes_chapter-one.md') not in fs.files
 
 
-def test_rename_node_preserves_sqid() -> None:
+@pytest.mark.asyncio
+async def test_rename_node_preserves_sqid() -> None:
     """Test renaming preserves the SQID in filenames."""
     fs = FakeFileSystem()
     directory = Path('/test')
@@ -157,7 +161,7 @@ title: Old Title
     use_case = RenameNodeUseCase(filesystem=fs, slugifier=slugifier)
 
     # Act
-    use_case.execute(sqid='SQID1', new_title='New Title', directory=directory)
+    await use_case.execute(sqid='SQID1', new_title='New Title', directory=directory)
 
     # Assert - SQID unchanged
     new_files = [path for path in fs.files if 'SQID1' in path]
@@ -165,7 +169,8 @@ title: Old Title
     assert all('SQID1' in path for path in new_files)
 
 
-def test_rename_node_preserves_materialized_path() -> None:
+@pytest.mark.asyncio
+async def test_rename_node_preserves_materialized_path() -> None:
     """Test renaming preserves the materialized path in filenames."""
     fs = FakeFileSystem()
     directory = Path('/test')
@@ -180,14 +185,15 @@ title: Old Title
     use_case = RenameNodeUseCase(filesystem=fs, slugifier=slugifier)
 
     # Act
-    use_case.execute(sqid='SQID1', new_title='New Title', directory=directory)
+    await use_case.execute(sqid='SQID1', new_title='New Title', directory=directory)
 
     # Assert - MP unchanged
     assert str(directory / '100-200_SQID1_draft_new-title.md') in fs.files
     assert str(directory / '100-200_SQID1_notes_new-title.md') in fs.files
 
 
-def test_rename_node_preserves_content() -> None:
+@pytest.mark.asyncio
+async def test_rename_node_preserves_content() -> None:
     """Test renaming preserves file content (except frontmatter title)."""
     fs = FakeFileSystem()
     directory = Path('/test')
@@ -210,7 +216,7 @@ More content here.
     use_case = RenameNodeUseCase(filesystem=fs, slugifier=slugifier)
 
     # Act
-    use_case.execute(sqid='SQID1', new_title='New Title', directory=directory)
+    await use_case.execute(sqid='SQID1', new_title='New Title', directory=directory)
 
     # Assert - content preserved
     new_draft = fs.files[str(directory / '100_SQID1_draft_new-title.md')]
@@ -223,7 +229,8 @@ More content here.
     assert new_notes == 'Important notes'
 
 
-def test_rename_node_handles_special_characters() -> None:
+@pytest.mark.asyncio
+async def test_rename_node_handles_special_characters() -> None:
     """Test renaming handles special characters in title."""
     fs = FakeFileSystem()
     directory = Path('/test')
@@ -238,14 +245,15 @@ title: Old Title
     use_case = RenameNodeUseCase(filesystem=fs, slugifier=slugifier)
 
     # Act - title with special characters
-    use_case.execute(sqid='SQID1', new_title="Chapter 1: Hero's Journey", directory=directory)
+    await use_case.execute(sqid='SQID1', new_title="Chapter 1: Hero's Journey", directory=directory)
 
     # Assert - special characters handled in slug
     assert str(directory / "100_SQID1_draft_chapter-1:-hero's-journey.md") in fs.files
     assert str(directory / "100_SQID1_notes_chapter-1:-hero's-journey.md") in fs.files
 
 
-def test_rename_node_raises_error_if_node_not_found() -> None:
+@pytest.mark.asyncio
+async def test_rename_node_raises_error_if_node_not_found() -> None:
     """Test renaming nonexistent node raises ValueError."""
     fs = FakeFileSystem()
     directory = Path('/test')
@@ -255,10 +263,11 @@ def test_rename_node_raises_error_if_node_not_found() -> None:
 
     # Act & Assert
     with pytest.raises(ValueError, match='Node with SQID NONEXISTENT not found'):
-        use_case.execute(sqid='NONEXISTENT', new_title='New Title', directory=directory)
+        await use_case.execute(sqid='NONEXISTENT', new_title='New Title', directory=directory)
 
 
-def test_rename_node_with_no_title_change() -> None:
+@pytest.mark.asyncio
+async def test_rename_node_with_no_title_change() -> None:
     """Test renaming to same title is a no-op."""
     fs = FakeFileSystem()
     directory = Path('/test')
@@ -273,7 +282,7 @@ title: Chapter One
     use_case = RenameNodeUseCase(filesystem=fs, slugifier=slugifier)
 
     # Act - rename to same title
-    use_case.execute(sqid='SQID1', new_title='Chapter One', directory=directory)
+    await use_case.execute(sqid='SQID1', new_title='Chapter One', directory=directory)
 
     # Assert - files unchanged (same slug)
     assert str(directory / '100_SQID1_draft_chapter-one.md') in fs.files

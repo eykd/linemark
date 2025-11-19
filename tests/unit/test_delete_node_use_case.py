@@ -13,33 +13,34 @@ class FakeFileSystem:
     def __init__(self) -> None:
         self.files: dict[str, str] = {}
 
-    def read_file(self, path: Path) -> str:
+    async def read_file(self, path: Path) -> str:
         return self.files.get(str(path), '')
 
-    def write_file(self, path: Path, content: str) -> None:
+    async def write_file(self, path: Path, content: str) -> None:
         self.files[str(path)] = content
 
-    def delete_file(self, path: Path) -> None:
+    async def delete_file(self, path: Path) -> None:
         if str(path) in self.files:
             del self.files[str(path)]
 
-    def list_markdown_files(self, directory: Path) -> list[Path]:
+    async def list_markdown_files(self, directory: Path) -> list[Path]:
         return [Path(path) for path in self.files if path.endswith('.md') and path.startswith(str(directory))]
 
-    def file_exists(self, path: Path) -> bool:
+    async def file_exists(self, path: Path) -> bool:
         return str(path) in self.files
 
-    def create_directory(self, directory: Path) -> None:
+    async def create_directory(self, directory: Path) -> None:
         """Create directory (no-op for fake filesystem)."""
 
-    def rename_file(self, old_path: Path, new_path: Path) -> None:
+    async def rename_file(self, old_path: Path, new_path: Path) -> None:
         """Rename file."""
         if str(old_path) in self.files:
             self.files[str(new_path)] = self.files[str(old_path)]
             del self.files[str(old_path)]
 
 
-def test_delete_leaf_node() -> None:
+@pytest.mark.asyncio
+async def test_delete_leaf_node() -> None:
     """Test deleting a leaf node (no children)."""
     from linemark.use_cases.delete_node import DeleteNodeUseCase
 
@@ -55,7 +56,7 @@ def test_delete_leaf_node() -> None:
     use_case = DeleteNodeUseCase(filesystem=fs)
 
     # Delete leaf node
-    result = use_case.execute(sqid='SQID1', directory=directory, recursive=False, promote=False)
+    result = await use_case.execute(sqid='SQID1', directory=directory, recursive=False, promote=False)
 
     # Verify node deleted
     assert len(result) == 1
@@ -69,7 +70,8 @@ def test_delete_leaf_node() -> None:
     assert str(directory / '200_SQID2_draft_node-two.md') in fs.files
 
 
-def test_delete_node_with_children_raises_error() -> None:
+@pytest.mark.asyncio
+async def test_delete_node_with_children_raises_error() -> None:
     """Test deleting node with children raises error without recursive/promote."""
     from linemark.use_cases.delete_node import DeleteNodeUseCase
 
@@ -86,10 +88,11 @@ def test_delete_node_with_children_raises_error() -> None:
 
     # Try to delete parent without flags
     with pytest.raises(ValueError, match='Cannot delete node with children'):
-        use_case.execute(sqid='PARENT', directory=directory, recursive=False, promote=False)
+        await use_case.execute(sqid='PARENT', directory=directory, recursive=False, promote=False)
 
 
-def test_delete_recursive_removes_descendants() -> None:
+@pytest.mark.asyncio
+async def test_delete_recursive_removes_descendants() -> None:
     """Test recursive delete removes node and all descendants."""
     from linemark.use_cases.delete_node import DeleteNodeUseCase
 
@@ -109,7 +112,7 @@ def test_delete_recursive_removes_descendants() -> None:
     use_case = DeleteNodeUseCase(filesystem=fs)
 
     # Delete parent recursively
-    result = use_case.execute(sqid='PARENT', directory=directory, recursive=True, promote=False)
+    result = await use_case.execute(sqid='PARENT', directory=directory, recursive=True, promote=False)
 
     # Verify all deleted
     assert len(result) == 3
@@ -127,7 +130,8 @@ def test_delete_recursive_removes_descendants() -> None:
     assert str(directory / '200_SIBLING_draft_sibling.md') in fs.files
 
 
-def test_delete_promote_promotes_children() -> None:
+@pytest.mark.asyncio
+async def test_delete_promote_promotes_children() -> None:
     """Test promote delete promotes children to parent level."""
     from linemark.use_cases.delete_node import DeleteNodeUseCase
 
@@ -145,7 +149,7 @@ def test_delete_promote_promotes_children() -> None:
     use_case = DeleteNodeUseCase(filesystem=fs)
 
     # Delete parent with promote
-    result = use_case.execute(sqid='PARENT', directory=directory, recursive=False, promote=True)
+    result = await use_case.execute(sqid='PARENT', directory=directory, recursive=False, promote=True)
 
     # Verify parent deleted
     assert len(result) == 1
@@ -169,7 +173,8 @@ def test_delete_promote_promotes_children() -> None:
         assert '-' not in mp_str  # Root level (single segment)
 
 
-def test_delete_nonexistent_node_raises_error() -> None:
+@pytest.mark.asyncio
+async def test_delete_nonexistent_node_raises_error() -> None:
     """Test deleting nonexistent node raises error."""
     from linemark.use_cases.delete_node import DeleteNodeUseCase
 
@@ -179,10 +184,11 @@ def test_delete_nonexistent_node_raises_error() -> None:
     use_case = DeleteNodeUseCase(filesystem=fs)
 
     with pytest.raises(ValueError, match='Node with SQID .* not found'):
-        use_case.execute(sqid='MISSING', directory=directory, recursive=False, promote=False)
+        await use_case.execute(sqid='MISSING', directory=directory, recursive=False, promote=False)
 
 
-def test_recursive_and_promote_raises_error() -> None:
+@pytest.mark.asyncio
+async def test_recursive_and_promote_raises_error() -> None:
     """Test using both recursive and promote flags raises error."""
     from linemark.use_cases.delete_node import DeleteNodeUseCase
 
@@ -192,4 +198,4 @@ def test_recursive_and_promote_raises_error() -> None:
     use_case = DeleteNodeUseCase(filesystem=fs)
 
     with pytest.raises(ValueError, match='Cannot use both recursive and promote'):
-        use_case.execute(sqid='SQID1', directory=directory, recursive=True, promote=True)
+        await use_case.execute(sqid='SQID1', directory=directory, recursive=True, promote=True)

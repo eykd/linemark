@@ -6,7 +6,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from linemark.cli.main import lmk
+from tests.conftest import invoke_asyncclick_command
 
 
 def test_search_finds_text_in_draft(tmp_path: Path) -> None:
@@ -15,22 +15,34 @@ def test_search_finds_text_in_draft(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add a node
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
+        sqid = stdout1.split('@')[1].split(')')[0]
 
         # Write content to draft
         content = 'This is a test with keyword FINDME in it'
-        result2 = runner.invoke(
-            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command(
+            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'draft', f'@{sqid}'], stdin_content=content
         )
-        assert result2.exit_code == 0
+        assert exit_code2 == 0
 
         # Search for the keyword
-        result3 = runner.invoke(lmk, ['search', 'FINDME', '--directory', str(isolated_dir)])
-        assert result3.exit_code == 0
-        assert 'FINDME' in result3.output
-        assert sqid in result3.output
+        exit_code3, stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'search',
+            'FINDME',
+        ])
+        assert exit_code3 == 0
+        assert 'FINDME' in stdout3
+        assert sqid in stdout3
 
 
 def test_search_finds_text_in_notes(tmp_path: Path) -> None:
@@ -39,21 +51,33 @@ def test_search_finds_text_in_notes(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add a node
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
+        sqid = stdout1.split('@')[1].split(')')[0]
 
         # Write content to notes
         content = 'Important notes with SECRET keyword'
-        result2 = runner.invoke(
-            lmk, ['types', 'write', 'notes', f'@{sqid}', '--directory', str(isolated_dir)], input=content
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command(
+            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'notes', f'@{sqid}'], stdin_content=content
         )
-        assert result2.exit_code == 0
+        assert exit_code2 == 0
 
         # Search for the keyword
-        result3 = runner.invoke(lmk, ['search', 'SECRET', '--directory', str(isolated_dir)])
-        assert result3.exit_code == 0
-        assert 'SECRET' in result3.output
+        exit_code3, stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'search',
+            'SECRET',
+        ])
+        assert exit_code3 == 0
+        assert 'SECRET' in stdout3
 
 
 def test_search_with_regex_pattern(tmp_path: Path) -> None:
@@ -62,21 +86,33 @@ def test_search_with_regex_pattern(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add a node
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
+        sqid = stdout1.split('@')[1].split(')')[0]
 
         # Write content with pattern
         content = 'Error: Code 123\nError: Code 456'
-        result2 = runner.invoke(
-            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command(
+            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'draft', f'@{sqid}'], stdin_content=content
         )
-        assert result2.exit_code == 0
+        assert exit_code2 == 0
 
         # Search with regex pattern
-        result3 = runner.invoke(lmk, ['search', r'Error: Code \d+', '--directory', str(isolated_dir)])
-        assert result3.exit_code == 0
-        assert 'Error: Code' in result3.output
+        exit_code3, stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'search',
+            r'Error: Code \d+',
+        ])
+        assert exit_code3 == 0
+        assert 'Error: Code' in stdout3
 
 
 def test_search_case_sensitive(tmp_path: Path) -> None:
@@ -85,21 +121,34 @@ def test_search_case_sensitive(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add a node
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
+        sqid = stdout1.split('@')[1].split(')')[0]
 
         # Write content with mixed case
         content = 'This has lowercase findme and UPPERCASE FINDME'
-        result2 = runner.invoke(
-            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command(
+            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'draft', f'@{sqid}'], stdin_content=content
         )
-        assert result2.exit_code == 0
+        assert exit_code2 == 0
 
         # Search case-sensitively for uppercase
-        result3 = runner.invoke(lmk, ['search', 'FINDME', '--case-sensitive', '--directory', str(isolated_dir)])
-        assert result3.exit_code == 0
-        assert 'UPPERCASE FINDME' in result3.output
+        exit_code3, stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'search',
+            'FINDME',
+            '--case-sensitive',
+        ])
+        assert exit_code3 == 0
+        assert 'UPPERCASE FINDME' in stdout3
 
 
 def test_search_filter_by_doctype(tmp_path: Path) -> None:
@@ -108,29 +157,41 @@ def test_search_filter_by_doctype(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add a node
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
+        sqid = stdout1.split('@')[1].split(')')[0]
 
         # Write content to draft
         draft_content = 'This is in the draft with KEYWORD'
-        result2 = runner.invoke(
-            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=draft_content
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command(
+            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'draft', f'@{sqid}'], stdin_content=draft_content
         )
-        assert result2.exit_code == 0
+        assert exit_code2 == 0
 
         # Write content to notes
         notes_content = 'This is in the notes with KEYWORD'
-        result3 = runner.invoke(
-            lmk, ['types', 'write', 'notes', f'@{sqid}', '--directory', str(isolated_dir)], input=notes_content
+        exit_code3, _stdout3, _stderr3 = invoke_asyncclick_command(
+            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'notes', f'@{sqid}'], stdin_content=notes_content
         )
-        assert result3.exit_code == 0
+        assert exit_code3 == 0
 
         # Search across all doctypes
-        result4 = runner.invoke(lmk, ['search', 'KEYWORD', '--directory', str(isolated_dir)])
-        assert result4.exit_code == 0
-        assert 'KEYWORD' in result4.output
-        assert 'draft' in result4.output or 'notes' in result4.output
+        exit_code4, stdout4, _stderr4 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'search',
+            'KEYWORD',
+        ])
+        assert exit_code4 == 0
+        assert 'KEYWORD' in stdout4
+        assert 'draft' in stdout4 or 'notes' in stdout4
 
 
 def test_search_multiline(tmp_path: Path) -> None:
@@ -139,21 +200,34 @@ def test_search_multiline(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add a node
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
+        sqid = stdout1.split('@')[1].split(')')[0]
 
         # Write content with pattern on single line
         content = 'Line one two three'
-        result2 = runner.invoke(
-            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command(
+            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'draft', f'@{sqid}'], stdin_content=content
         )
-        assert result2.exit_code == 0
+        assert exit_code2 == 0
 
         # Search with pattern (multiline doesn't affect line-by-line search)
-        result3 = runner.invoke(lmk, ['search', r'one.*two', '--multiline', '--directory', str(isolated_dir)])
-        assert result3.exit_code == 0
-        assert sqid in result3.output
+        exit_code3, stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'search',
+            r'one.*two',
+            '--multiline',
+        ])
+        assert exit_code3 == 0
+        assert sqid in stdout3
 
 
 def test_search_literal_string(tmp_path: Path) -> None:
@@ -162,21 +236,34 @@ def test_search_literal_string(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add a node
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
+        sqid = stdout1.split('@')[1].split(')')[0]
 
         # Write content with regex special characters
         content = 'This has regex chars: [a-z]+ and \\d+'
-        result2 = runner.invoke(
-            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command(
+            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'draft', f'@{sqid}'], stdin_content=content
         )
-        assert result2.exit_code == 0
+        assert exit_code2 == 0
 
         # Search literally for the pattern
-        result3 = runner.invoke(lmk, ['search', '[a-z]+', '--literal', '--directory', str(isolated_dir)])
-        assert result3.exit_code == 0
-        assert '[a-z]+' in result3.output
+        exit_code3, stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'search',
+            '[a-z]+',
+            '--literal',
+        ])
+        assert exit_code3 == 0
+        assert '[a-z]+' in stdout3
 
 
 def test_search_json_output(tmp_path: Path) -> None:
@@ -185,22 +272,35 @@ def test_search_json_output(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add a node
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
+        sqid = stdout1.split('@')[1].split(')')[0]
 
         # Write content
         content = 'This has JSONTEST keyword'
-        result2 = runner.invoke(
-            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=content
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command(
+            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'draft', f'@{sqid}'], stdin_content=content
         )
-        assert result2.exit_code == 0
+        assert exit_code2 == 0
 
         # Search with JSON output
-        result3 = runner.invoke(lmk, ['search', 'JSONTEST', '--json', '--directory', str(isolated_dir)])
-        assert result3.exit_code == 0
-        assert '{' in result3.output
-        assert '"sqid"' in result3.output or sqid in result3.output
+        exit_code3, stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'search',
+            'JSONTEST',
+            '--json',
+        ])
+        assert exit_code3 == 0
+        assert '{' in stdout3
+        assert '"sqid"' in stdout3 or sqid in stdout3
 
 
 def test_search_no_results(tmp_path: Path) -> None:
@@ -209,12 +309,24 @@ def test_search_no_results(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add a node
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
+        exit_code1, _stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
 
         # Search for non-existent pattern
-        result2 = runner.invoke(lmk, ['search', 'DOESNOTEXIST', '--directory', str(isolated_dir)])
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'search',
+            'DOESNOTEXIST',
+        ])
+        assert exit_code2 == 0
         # No output expected for no results
 
 
@@ -224,9 +336,15 @@ def test_search_invalid_regex(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Search with invalid regex
-        result = runner.invoke(lmk, ['search', '[invalid(regex', '--directory', str(isolated_dir)])
-        assert result.exit_code != 0
-        assert 'Error' in result.output
+        exit_code, stdout, stderr = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'search',
+            '[invalid(regex',
+        ])
+        assert exit_code != 0
+        assert 'Error' in stderr or 'Error' in stdout
 
 
 def test_search_subtree_filter(tmp_path: Path) -> None:
@@ -235,30 +353,49 @@ def test_search_subtree_filter(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add parent node
-        result1 = runner.invoke(lmk, ['add', 'Parent', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        parent_sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Parent',
+        ])
+        assert exit_code1 == 0
+        parent_sqid = stdout1.split('@')[1].split(')')[0]
         # Extract position from output - "Created node 100 (@SQID)"
-        parent_position = result1.output.split('node ')[1].split(' ')[0]
+        parent_position = stdout1.split('node ')[1].split(' ')[0]
 
         # Add child node
-        result2 = runner.invoke(
-            lmk, ['add', 'Child', '--child-of', f'@{parent_sqid}', '--directory', str(isolated_dir)]
-        )
-        assert result2.exit_code == 0
-        child_sqid = result2.output.split('@')[1].split(')')[0]
+        exit_code2, stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Child',
+            '--child-of',
+            f'@{parent_sqid}',
+        ])
+        assert exit_code2 == 0
+        child_sqid = stdout2.split('@')[1].split(')')[0]
 
         # Write content to child
         content = 'Child content with SUBTREETEST'
-        result3 = runner.invoke(
-            lmk, ['types', 'write', 'draft', f'@{child_sqid}', '--directory', str(isolated_dir)], input=content
+        exit_code3, _stdout3, _stderr3 = invoke_asyncclick_command(
+            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'draft', f'@{child_sqid}'], stdin_content=content
         )
-        assert result3.exit_code == 0
+        assert exit_code3 == 0
 
         # Search within parent subtree using position prefix
-        result4 = runner.invoke(lmk, ['search', 'SUBTREETEST', parent_position, '--directory', str(isolated_dir)])
-        assert result4.exit_code == 0
-        assert 'SUBTREETEST' in result4.output
+        exit_code4, stdout4, _stderr4 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'search',
+            'SUBTREETEST',
+            parent_position,
+        ])
+        assert exit_code4 == 0
+        assert 'SUBTREETEST' in stdout4
 
 
 def test_search_single_doctype_filter(tmp_path: Path) -> None:
@@ -267,34 +404,46 @@ def test_search_single_doctype_filter(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add a node
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
+        sqid = stdout1.split('@')[1].split(')')[0]
 
         # Write content to draft
         draft_content = 'Draft DOCTYPE1TEST'
-        result2 = runner.invoke(
-            lmk, ['types', 'write', 'draft', f'@{sqid}', '--directory', str(isolated_dir)], input=draft_content
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command(
+            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'draft', f'@{sqid}'], stdin_content=draft_content
         )
-        assert result2.exit_code == 0
+        assert exit_code2 == 0
 
         # Write content to notes (different keyword)
         notes_content = 'Notes different content'
-        result3 = runner.invoke(
-            lmk, ['types', 'write', 'notes', f'@{sqid}', '--directory', str(isolated_dir)], input=notes_content
+        exit_code3, _stdout3, _stderr3 = invoke_asyncclick_command(
+            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'notes', f'@{sqid}'], stdin_content=notes_content
         )
-        assert result3.exit_code == 0
+        assert exit_code3 == 0
 
         # Search across all doctypes (--doctype causes Click parsing issues with optional positional)
-        result4 = runner.invoke(lmk, ['search', 'DOCTYPE1TEST', '--directory', str(isolated_dir)])
-        assert result4.exit_code == 0
-        assert 'DOCTYPE1TEST' in result4.output
-        assert 'draft' in result4.output
+        exit_code4, stdout4, _stderr4 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'search',
+            'DOCTYPE1TEST',
+        ])
+        assert exit_code4 == 0
+        assert 'DOCTYPE1TEST' in stdout4
+        assert 'draft' in stdout4
 
 
 def test_search_handles_non_utf8_encoding(tmp_path: Path) -> None:
     """Test search handles files with non-UTF-8 encoding (Windows-1252 smart quotes)."""
-    runner = CliRunner()
+    CliRunner()
 
     # Create a file directly with non-UTF-8 encoding (simulate Windows-1252 smart quote)
     # Byte 0x92 is a right single quotation mark in Windows-1252
@@ -308,7 +457,13 @@ def test_search_handles_non_utf8_encoding(tmp_path: Path) -> None:
     file_path.write_bytes(content_bytes)
 
     # Search should not crash on encoding errors
-    result = runner.invoke(lmk, ['search', 'searchable', '--directory', str(test_dir)])
-    assert result.exit_code == 0
-    assert 'searchable' in result.output
-    assert 'ABC' in result.output  # SQID should be extracted
+    exit_code, stdout, _stderr = invoke_asyncclick_command([
+        'lmk',
+        '--directory',
+        str(test_dir),
+        'search',
+        'searchable',
+    ])
+    assert exit_code == 0
+    assert 'searchable' in stdout
+    assert 'ABC' in stdout  # SQID should be extracted

@@ -5,10 +5,13 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
+
 from linemark.adapters.search_adapter import SearchAdapter
 
 
-def test_search_adapter_filter_by_subtree_and_doctypes(tmp_path: Path) -> None:
+@pytest.mark.asyncio
+async def test_search_adapter_filter_by_subtree_and_doctypes(tmp_path: Path) -> None:
     """Test filtering by both subtree and doctypes."""
     adapter = SearchAdapter()
 
@@ -20,7 +23,9 @@ def test_search_adapter_filter_by_subtree_and_doctypes(tmp_path: Path) -> None:
     (tmp_path / '200_GHI_draft_other.md').write_text('Other content')
 
     # Get files filtered by subtree "100" and doctypes ["draft", "notes"]
-    files = list(adapter.get_files_in_outline_order(tmp_path, subtree_sqid='100', doctypes=['draft', 'notes']))
+    files = [
+        f async for f in adapter.get_files_in_outline_order(tmp_path, subtree_sqid='100', doctypes=['draft', 'notes'])
+    ]
 
     # Should include parent and child draft and notes files
     filenames = [f.name for f in files]
@@ -31,7 +36,8 @@ def test_search_adapter_filter_by_subtree_and_doctypes(tmp_path: Path) -> None:
     assert '200_GHI_draft_other.md' not in filenames
 
 
-def test_search_adapter_filter_by_doctypes_only(tmp_path: Path) -> None:
+@pytest.mark.asyncio
+async def test_search_adapter_filter_by_doctypes_only(tmp_path: Path) -> None:
     """Test filtering by doctypes only."""
     adapter = SearchAdapter()
 
@@ -42,7 +48,7 @@ def test_search_adapter_filter_by_doctypes_only(tmp_path: Path) -> None:
     (tmp_path / '200_DEF_characters_other.md').write_text('Characters')
 
     # Get files filtered by doctypes only
-    files = list(adapter.get_files_in_outline_order(tmp_path, doctypes=['draft', 'notes']))
+    files = [f async for f in adapter.get_files_in_outline_order(tmp_path, doctypes=['draft', 'notes'])]
 
     filenames = [f.name for f in files]
     assert '100_ABC_draft_test.md' in filenames
@@ -52,7 +58,8 @@ def test_search_adapter_filter_by_doctypes_only(tmp_path: Path) -> None:
     assert '200_DEF_characters_other.md' not in filenames
 
 
-def test_search_adapter_filter_by_subtree_only(tmp_path: Path) -> None:
+@pytest.mark.asyncio
+async def test_search_adapter_filter_by_subtree_only(tmp_path: Path) -> None:
     """Test filtering by subtree only."""
     adapter = SearchAdapter()
 
@@ -63,7 +70,7 @@ def test_search_adapter_filter_by_subtree_only(tmp_path: Path) -> None:
     (tmp_path / '200_GHI_draft_other.md').write_text('Other content')
 
     # Get files filtered by subtree only
-    files = list(adapter.get_files_in_outline_order(tmp_path, subtree_sqid='100'))
+    files = [f async for f in adapter.get_files_in_outline_order(tmp_path, subtree_sqid='100')]
 
     filenames = [f.name for f in files]
     assert '100_ABC_draft_test.md' in filenames
@@ -72,7 +79,8 @@ def test_search_adapter_filter_by_subtree_only(tmp_path: Path) -> None:
     assert '200_GHI_draft_other.md' not in filenames
 
 
-def test_search_adapter_search_file(tmp_path: Path) -> None:
+@pytest.mark.asyncio
+async def test_search_adapter_search_file(tmp_path: Path) -> None:
     """Test searching a single file."""
     adapter = SearchAdapter()
 
@@ -84,7 +92,7 @@ def test_search_adapter_search_file(tmp_path: Path) -> None:
     pattern = re.compile(r'Hello')
 
     # Search file
-    matches = list(adapter.search_file(test_file, pattern))
+    matches = [m async for m in adapter.search_file(test_file, pattern)]
 
     assert len(matches) == 2
     assert matches[0] == (1, 'Line 1: Hello')
@@ -126,7 +134,8 @@ def test_search_adapter_compile_pattern(tmp_path: Path) -> None:
     assert pattern_ml.search('a\nb') is not None
 
 
-def test_search_adapter_search_outline(tmp_path: Path) -> None:
+@pytest.mark.asyncio
+async def test_search_adapter_search_outline(tmp_path: Path) -> None:
     """Test searching across outline files."""
     adapter = SearchAdapter()
 
@@ -139,7 +148,7 @@ def test_search_adapter_search_outline(tmp_path: Path) -> None:
     pattern = adapter.compile_pattern('Keyword')
 
     # Search outline
-    results = list(adapter.search_outline(pattern, tmp_path))
+    results = [r async for r in adapter.search_outline(pattern, tmp_path)]
 
     assert len(results) == 2
     assert all(r.sqid == 'ABC' for r in results)
@@ -148,7 +157,8 @@ def test_search_adapter_search_outline(tmp_path: Path) -> None:
     assert any('notes' in r.filename for r in results)
 
 
-def test_search_adapter_handles_non_utf8_encoding(tmp_path: Path) -> None:
+@pytest.mark.asyncio
+async def test_search_adapter_handles_non_utf8_encoding(tmp_path: Path) -> None:
     """Test searching files with non-UTF-8 encoding (Windows-1252)."""
     adapter = SearchAdapter()
 
@@ -163,7 +173,7 @@ def test_search_adapter_handles_non_utf8_encoding(tmp_path: Path) -> None:
     pattern = re.compile(r'test')
 
     # Search file - should not raise UnicodeDecodeError
-    matches = list(adapter.search_file(test_file, pattern))
+    matches = [m async for m in adapter.search_file(test_file, pattern)]
 
     # Should find the match despite encoding difference
     assert len(matches) == 1

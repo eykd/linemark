@@ -49,7 +49,7 @@ class AddNodeUseCase:
         self.slugifier = slugifier
         self.outline: Outline | None = None
 
-    def _load_outline(self, directory: Path) -> Outline:
+    async def _load_outline(self, directory: Path) -> Outline:
         """Load existing outline from directory or create new one.
 
         Args:
@@ -62,7 +62,7 @@ class AddNodeUseCase:
         outline = Outline()
 
         # List all markdown files
-        md_files = self.filesystem.list_markdown_files(directory)
+        md_files = await self.filesystem.list_markdown_files(directory)
 
         # Parse each file
         for file_path in md_files:
@@ -80,7 +80,7 @@ class AddNodeUseCase:
             if node is None:
                 # Read title from draft file
                 if doc_type == 'draft':
-                    content = self.filesystem.read_file(file_path)
+                    content = await self.filesystem.read_file(file_path)
                     title = self._extract_title_from_frontmatter(content)
                 else:
                     # Skip non-draft files if node doesn't exist yet
@@ -132,7 +132,7 @@ class AddNodeUseCase:
 
         return 'Untitled'
 
-    def execute(
+    async def execute(
         self,
         title: str,
         directory: Path,
@@ -158,7 +158,7 @@ class AddNodeUseCase:
         """
         # Load or create outline
         if self.outline is None:
-            self.outline = self._load_outline(directory)
+            self.outline = await self._load_outline(directory)
 
         # Determine materialized path for new node
         if parent_sqid is not None:
@@ -215,9 +215,9 @@ title: {title}
 ---
 
 """
-        self.filesystem.write_file(directory / draft_filename, draft_content)
+        await self.filesystem.write_file(directory / draft_filename, draft_content)
 
         notes_filename = node.filename('notes')
-        self.filesystem.write_file(directory / notes_filename, '')
+        await self.filesystem.write_file(directory / notes_filename, '')
 
         return node

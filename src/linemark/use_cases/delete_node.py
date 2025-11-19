@@ -34,7 +34,7 @@ class DeleteNodeUseCase:
         """
         self.filesystem = filesystem
 
-    def execute(
+    async def execute(
         self,
         sqid: str,
         directory: Path,
@@ -62,25 +62,25 @@ class DeleteNodeUseCase:
             raise ValueError(msg)
 
         # Build outline from filesystem
-        outline = self._build_outline(directory)
+        outline = await self._build_outline(directory)
 
         # Execute appropriate delete strategy
         if promote:
             deleted_nodes, promoted_nodes = outline.delete_node_promote(sqid)
             # Delete files for deleted node
-            self._delete_node_files(deleted_nodes, directory)
+            await self._delete_node_files(deleted_nodes, directory)
             # Rename files for promoted nodes
-            self._rename_promoted_files(promoted_nodes, directory)
+            await self._rename_promoted_files(promoted_nodes, directory)
             return deleted_nodes
 
         deleted_nodes = outline.delete_node_recursive(sqid) if recursive else outline.delete_node(sqid)
 
         # Delete files for all deleted nodes
-        self._delete_node_files(deleted_nodes, directory)
+        await self._delete_node_files(deleted_nodes, directory)
 
         return deleted_nodes
 
-    def _build_outline(self, directory: Path) -> Outline:  # noqa: PLR0914
+    async def _build_outline(self, directory: Path) -> Outline:  # noqa: PLR0914
         """Build Outline from filesystem.
 
         Args:
@@ -92,7 +92,7 @@ class DeleteNodeUseCase:
         """
         from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
 
-        all_files = self.filesystem.list_markdown_files(directory)
+        all_files = await self.filesystem.list_markdown_files(directory)
         nodes: dict[str, Node] = {}
 
         # Track SQIDs we've seen to avoid duplicates
@@ -117,8 +117,8 @@ class DeleteNodeUseCase:
 
             # Read title from draft file
             draft_path = directory / f'{mp_str}_{sqid_str}_draft_{slug}.md'
-            if self.filesystem.file_exists(draft_path):
-                content = self.filesystem.read_file(draft_path)
+            if await self.filesystem.file_exists(draft_path):
+                content = await self.filesystem.read_file(draft_path)
                 parts = content.split('---')
                 if len(parts) >= 3:
                     frontmatter = yaml.safe_load(parts[1])
@@ -149,7 +149,7 @@ class DeleteNodeUseCase:
 
         return Outline(nodes=nodes)
 
-    def _delete_node_files(self, nodes: list[Node], directory: Path) -> None:
+    async def _delete_node_files(self, nodes: list[Node], directory: Path) -> None:
         """Delete all files for given nodes.
 
         Args:
@@ -161,10 +161,10 @@ class DeleteNodeUseCase:
             for doc_type in node.document_types:
                 filename = node.filename(doc_type)
                 filepath = directory / filename
-                if self.filesystem.file_exists(filepath):  # pragma: no branch
-                    self.filesystem.delete_file(filepath)
+                if await self.filesystem.file_exists(filepath):  # pragma: no branch
+                    await self.filesystem.delete_file(filepath)
 
-    def _rename_promoted_files(self, promoted_nodes: list[Node], directory: Path) -> None:
+    async def _rename_promoted_files(self, promoted_nodes: list[Node], directory: Path) -> None:
         """Rename files for promoted nodes.
 
         Args:
@@ -173,7 +173,7 @@ class DeleteNodeUseCase:
 
         """
         # Renamed files need to match the new MP in the node
-        all_files = self.filesystem.list_markdown_files(directory)
+        all_files = await self.filesystem.list_markdown_files(directory)
 
         for node in promoted_nodes:
             # Find current files for this node (with old MP)
@@ -191,6 +191,6 @@ class DeleteNodeUseCase:
 
                 # Only rename if MP changed
                 if old_filepath != new_filepath:  # pragma: no branch
-                    content = self.filesystem.read_file(old_filepath)
-                    self.filesystem.write_file(new_filepath, content)
-                    self.filesystem.delete_file(old_filepath)
+                    content = await self.filesystem.read_file(old_filepath)
+                    await self.filesystem.write_file(new_filepath, content)
+                    await self.filesystem.delete_file(old_filepath)

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from linemark.cli.main import lmk
+from tests.conftest import invoke_asyncclick_command
 
 
 def test_delete_leaf_node(tmp_path: Path) -> None:
@@ -15,22 +15,40 @@ def test_delete_leaf_node(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add two nodes
-        result1 = runner.invoke(lmk, ['add', 'Node One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid1 = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Node One',
+        ])
+        assert exit_code1 == 0
+        sqid1 = stdout1.split('@')[1].split(')')[0]
 
-        result2 = runner.invoke(lmk, ['add', 'Node Two', '--directory', str(isolated_dir)])
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Node Two',
+        ])
+        assert exit_code2 == 0
 
         # Delete first node
-        result3 = runner.invoke(lmk, ['delete', f'@{sqid1}', '--directory', str(isolated_dir)])
-        assert result3.exit_code == 0
-        assert f'Deleted node @{sqid1}' in result3.output
+        exit_code3, stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'delete',
+            f'@{sqid1}',
+        ])
+        assert exit_code3 == 0
+        assert f'Deleted node @{sqid1}' in stdout3
 
         # Verify node deleted (list should only show Node Two)
-        result4 = runner.invoke(lmk, ['list', '--directory', str(isolated_dir)])
-        assert 'Node Two' in result4.output
-        assert 'Node One' not in result4.output
+        _exit_code4, stdout4, _stderr4 = invoke_asyncclick_command(['lmk', '--directory', str(isolated_dir), 'list'])
+        assert 'Node Two' in stdout4
+        assert 'Node One' not in stdout4
 
         # Verify files deleted
         cwd = Path.cwd()
@@ -44,19 +62,38 @@ def test_delete_node_with_children_fails(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add parent and child
-        result1 = runner.invoke(lmk, ['add', 'Parent', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        parent_sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Parent',
+        ])
+        assert exit_code1 == 0
+        parent_sqid = stdout1.split('@')[1].split(')')[0]
 
-        result2 = runner.invoke(
-            lmk, ['add', 'Child', '--child-of', f'@{parent_sqid}', '--directory', str(isolated_dir)]
-        )
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Child',
+            '--child-of',
+            f'@{parent_sqid}',
+        ])
+        assert exit_code2 == 0
 
         # Try to delete parent without flags
-        result3 = runner.invoke(lmk, ['delete', f'@{parent_sqid}', '--directory', str(isolated_dir)])
-        assert result3.exit_code != 0
-        assert 'Cannot delete node with children' in result3.output
+        exit_code3, stdout3, stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'delete',
+            f'@{parent_sqid}',
+        ])
+        assert exit_code3 != 0
+        output = stdout3 + stderr3
+        assert 'Cannot delete node with children' in output
 
 
 def test_delete_recursive(tmp_path: Path) -> None:
@@ -65,36 +102,67 @@ def test_delete_recursive(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Create hierarchy: parent -> child -> grandchild
-        result1 = runner.invoke(lmk, ['add', 'Parent', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        parent_sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Parent',
+        ])
+        assert exit_code1 == 0
+        parent_sqid = stdout1.split('@')[1].split(')')[0]
 
-        result2 = runner.invoke(
-            lmk, ['add', 'Child', '--child-of', f'@{parent_sqid}', '--directory', str(isolated_dir)]
-        )
-        assert result2.exit_code == 0
-        child_sqid = result2.output.split('@')[1].split(')')[0]
+        exit_code2, stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Child',
+            '--child-of',
+            f'@{parent_sqid}',
+        ])
+        assert exit_code2 == 0
+        child_sqid = stdout2.split('@')[1].split(')')[0]
 
-        result3 = runner.invoke(
-            lmk, ['add', 'Grandchild', '--child-of', f'@{child_sqid}', '--directory', str(isolated_dir)]
-        )
-        assert result3.exit_code == 0
+        exit_code3, _stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Grandchild',
+            '--child-of',
+            f'@{child_sqid}',
+        ])
+        assert exit_code3 == 0
 
         # Add sibling to parent
-        result4 = runner.invoke(lmk, ['add', 'Sibling', '--directory', str(isolated_dir)])
-        assert result4.exit_code == 0
+        exit_code4, _stdout4, _stderr4 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Sibling',
+        ])
+        assert exit_code4 == 0
 
         # Delete parent recursively
-        result5 = runner.invoke(lmk, ['delete', f'@{parent_sqid}', '-r', '--directory', str(isolated_dir)])
-        assert result5.exit_code == 0
-        assert f'Deleted node @{parent_sqid} and 2 descendants' in result5.output
+        exit_code5, stdout5, _stderr5 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'delete',
+            f'@{parent_sqid}',
+            '-r',
+        ])
+        assert exit_code5 == 0
+        assert f'Deleted node @{parent_sqid} and 2 descendants' in stdout5
 
         # Verify only sibling remains
-        result6 = runner.invoke(lmk, ['list', '--directory', str(isolated_dir)])
-        assert 'Sibling' in result6.output
-        assert 'Parent' not in result6.output
-        assert 'Child' not in result6.output
-        assert 'Grandchild' not in result6.output
+        _exit_code6, stdout6, _stderr6 = invoke_asyncclick_command(['lmk', '--directory', str(isolated_dir), 'list'])
+        assert 'Sibling' in stdout6
+        assert 'Parent' not in stdout6
+        assert 'Child' not in stdout6
+        assert 'Grandchild' not in stdout6
 
 
 def test_delete_promote(tmp_path: Path) -> None:
@@ -103,30 +171,55 @@ def test_delete_promote(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Create parent with two children
-        result1 = runner.invoke(lmk, ['add', 'Parent', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        parent_sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Parent',
+        ])
+        assert exit_code1 == 0
+        parent_sqid = stdout1.split('@')[1].split(')')[0]
 
-        result2 = runner.invoke(
-            lmk, ['add', 'Child One', '--child-of', f'@{parent_sqid}', '--directory', str(isolated_dir)]
-        )
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Child One',
+            '--child-of',
+            f'@{parent_sqid}',
+        ])
+        assert exit_code2 == 0
 
-        result3 = runner.invoke(
-            lmk, ['add', 'Child Two', '--child-of', f'@{parent_sqid}', '--directory', str(isolated_dir)]
-        )
-        assert result3.exit_code == 0
+        exit_code3, _stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Child Two',
+            '--child-of',
+            f'@{parent_sqid}',
+        ])
+        assert exit_code3 == 0
 
         # Delete parent with promote
-        result4 = runner.invoke(lmk, ['delete', f'@{parent_sqid}', '-p', '--directory', str(isolated_dir)])
-        assert result4.exit_code == 0
-        assert f'Deleted node @{parent_sqid} (children promoted to parent level)' in result4.output
+        exit_code4, stdout4, _stderr4 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'delete',
+            f'@{parent_sqid}',
+            '-p',
+        ])
+        assert exit_code4 == 0
+        assert f'Deleted node @{parent_sqid} (children promoted to parent level)' in stdout4
 
         # Verify children still exist at root level
-        result5 = runner.invoke(lmk, ['list', '--directory', str(isolated_dir)])
-        assert 'Child One' in result5.output
-        assert 'Child Two' in result5.output
-        assert 'Parent' not in result5.output
+        _exit_code5, stdout5, _stderr5 = invoke_asyncclick_command(['lmk', '--directory', str(isolated_dir), 'list'])
+        assert 'Child One' in stdout5
+        assert 'Child Two' in stdout5
+        assert 'Parent' not in stdout5
 
 
 def test_delete_with_multiple_document_types(tmp_path: Path) -> None:
@@ -135,13 +228,27 @@ def test_delete_with_multiple_document_types(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add node
-        result1 = runner.invoke(lmk, ['add', 'Chapter', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter',
+        ])
+        assert exit_code1 == 0
+        sqid = stdout1.split('@')[1].split(')')[0]
 
         # Add custom document types
-        runner.invoke(lmk, ['types', 'add', 'characters', f'@{sqid}', '--directory', str(isolated_dir)])
-        runner.invoke(lmk, ['types', 'add', 'worldbuilding', f'@{sqid}', '--directory', str(isolated_dir)])
+        invoke_asyncclick_command(['lmk', '--directory', str(isolated_dir), 'types', 'add', 'characters', f'@{sqid}'])
+        invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'types',
+            'add',
+            'worldbuilding',
+            f'@{sqid}',
+        ])
 
         # Verify files exist
         cwd = Path.cwd()
@@ -149,8 +256,14 @@ def test_delete_with_multiple_document_types(tmp_path: Path) -> None:
         assert len(files_before) == 4  # draft, notes, characters, worldbuilding
 
         # Delete node
-        result2 = runner.invoke(lmk, ['delete', f'@{sqid}', '--directory', str(isolated_dir)])
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'delete',
+            f'@{sqid}',
+        ])
+        assert exit_code2 == 0
 
         # Verify all files deleted
         files_after = list(cwd.glob(f'*{sqid}*.md'))
@@ -162,6 +275,13 @@ def test_delete_nonexistent_node_fails(tmp_path: Path) -> None:
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
-        result = runner.invoke(lmk, ['delete', '@NONEXISTENT', '--directory', str(isolated_dir)])
-        assert result.exit_code != 0
-        assert 'not found' in result.output
+        exit_code, stdout, stderr = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'delete',
+            '@NONEXISTENT',
+        ])
+        assert exit_code != 0
+        output = stdout + stderr
+        assert 'not found' in output

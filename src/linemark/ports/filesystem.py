@@ -25,7 +25,7 @@ class FileSystemPort(Protocol):
     All methods should raise descriptive exceptions on filesystem errors (per FR-042).
     """
 
-    def read_file(self, filepath: Path) -> str:
+    async def read_file(self, filepath: Path) -> str:
         """Read file contents as string.
 
         Args:
@@ -42,7 +42,7 @@ class FileSystemPort(Protocol):
         """
         ...
 
-    def write_file(self, filepath: Path, content: str) -> None:
+    async def write_file(self, filepath: Path, content: str) -> None:
         """Write string content to file, creating parent directories if needed.
 
         Args:
@@ -56,7 +56,7 @@ class FileSystemPort(Protocol):
         """
         ...
 
-    def delete_file(self, filepath: Path) -> None:
+    async def delete_file(self, filepath: Path) -> None:
         """Delete file if it exists.
 
         Args:
@@ -72,7 +72,7 @@ class FileSystemPort(Protocol):
         """
         ...
 
-    def rename_file(self, old_path: Path, new_path: Path) -> None:
+    async def rename_file(self, old_path: Path, new_path: Path) -> None:
         """Atomically rename file.
 
         Args:
@@ -92,7 +92,7 @@ class FileSystemPort(Protocol):
         """
         ...
 
-    def list_markdown_files(self, directory: Path) -> list[Path]:
+    async def list_markdown_files(self, directory: Path) -> list[Path]:
         """List all .md files in directory (non-recursive).
 
         Args:
@@ -109,7 +109,7 @@ class FileSystemPort(Protocol):
         """
         ...
 
-    def file_exists(self, filepath: Path) -> bool:
+    async def file_exists(self, filepath: Path) -> bool:
         """Check if file exists.
 
         Args:
@@ -125,7 +125,7 @@ class FileSystemPort(Protocol):
         """
         ...
 
-    def create_directory(self, directory: Path) -> None:
+    async def create_directory(self, directory: Path) -> None:
         """Create directory and all parent directories.
 
         Args:

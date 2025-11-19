@@ -50,7 +50,8 @@ def test_execute_method_signature() -> None:
     assert sig.return_annotation is str or 'str' in str(sig.return_annotation)
 
 
-def test_execute_raises_doctype_not_found_error(filesystem_port: FileSystemPort, tmp_path: Path) -> None:
+@pytest.mark.asyncio
+async def test_execute_raises_doctype_not_found_error(filesystem_port: FileSystemPort, tmp_path: Path) -> None:
     """Test T007: CompileDoctypeUseCase raises DoctypeNotFoundError when doctype doesn't exist."""
     from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
 
@@ -59,7 +60,7 @@ def test_execute_raises_doctype_not_found_error(filesystem_port: FileSystemPort,
 
     # Act & Assert - should raise DoctypeNotFoundError for non-existent doctype
     with pytest.raises(DoctypeNotFoundError) as exc_info:
-        use_case.execute(
+        await use_case.execute(
             doctype='nonexistent',
             directory=tmp_path,
             sqid=None,

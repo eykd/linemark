@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 
 class FakeFileSystem:
     """Fake filesystem adapter for testing."""
@@ -12,39 +14,40 @@ class FakeFileSystem:
         self.files: dict[str, str] = {}
         self.directories: set[str] = set()
 
-    def read_file(self, path: Path) -> str:
+    async def read_file(self, path: Path) -> str:
         """Read file from in-memory storage."""
         return self.files.get(str(path), '')
 
-    def write_file(self, path: Path, content: str) -> None:
+    async def write_file(self, path: Path, content: str) -> None:
         """Write file to in-memory storage."""
         self.files[str(path)] = content
 
-    def delete_file(self, path: Path) -> None:
+    async def delete_file(self, path: Path) -> None:
         """Delete file from in-memory storage."""
         if str(path) in self.files:
             del self.files[str(path)]
 
-    def rename_file(self, old_path: Path, new_path: Path) -> None:
+    async def rename_file(self, old_path: Path, new_path: Path) -> None:
         """Rename file in in-memory storage."""
         if str(old_path) in self.files:
             self.files[str(new_path)] = self.files[str(old_path)]
             del self.files[str(old_path)]
 
-    def list_markdown_files(self, directory: Path) -> list[Path]:
+    async def list_markdown_files(self, directory: Path) -> list[Path]:
         """List markdown files in directory."""
         return [Path(path) for path in self.files if path.endswith('.md') and path.startswith(str(directory))]
 
-    def file_exists(self, path: Path) -> bool:
+    async def file_exists(self, path: Path) -> bool:
         """Check if file exists in in-memory storage."""
         return str(path) in self.files
 
-    def create_directory(self, path: Path) -> None:
+    async def create_directory(self, path: Path) -> None:
         """Create directory in in-memory storage."""
         self.directories.add(str(path))
 
 
-def test_move_node_to_new_parent_renames_files() -> None:
+@pytest.mark.asyncio
+async def test_move_node_to_new_parent_renames_files() -> None:
     """Test moving node to new parent renames all document files."""
     # Arrange
     from linemark.use_cases.move_node import MoveNodeUseCase
@@ -72,7 +75,7 @@ title: Child
     use_case = MoveNodeUseCase(filesystem=fs)
 
     # Act - move child from 100-100 to 200-100
-    use_case.execute(
+    await use_case.execute(
         sqid='SQID3',
         new_mp_str='200-100',
         directory=directory,
@@ -89,7 +92,8 @@ title: Child
     assert str(directory / '200_SQID2_draft_parent-two.md') in fs.files
 
 
-def test_move_node_with_descendants_cascades_renames() -> None:
+@pytest.mark.asyncio
+async def test_move_node_with_descendants_cascades_renames() -> None:
     """Test moving node with descendants renames all descendant files."""
     # Arrange
     from linemark.use_cases.move_node import MoveNodeUseCase
@@ -117,7 +121,7 @@ title: Grandchild
     use_case = MoveNodeUseCase(filesystem=fs)
 
     # Act - move child (100-100) to root as 200
-    use_case.execute(
+    await use_case.execute(
         sqid='SQID2',
         new_mp_str='200',
         directory=directory,
@@ -136,7 +140,8 @@ title: Grandchild
     assert str(directory / '100-100-100_SQID3_draft_grandchild.md') not in fs.files
 
 
-def test_move_node_sqid_not_found_raises_error() -> None:
+@pytest.mark.asyncio
+async def test_move_node_sqid_not_found_raises_error() -> None:
     """Test moving non-existent node raises error."""
     # Arrange
     from linemark.use_cases.move_node import MoveNodeUseCase
@@ -150,14 +155,15 @@ def test_move_node_sqid_not_found_raises_error() -> None:
     import pytest
 
     with pytest.raises(ValueError, match='Node with SQID .* not found'):
-        use_case.execute(
+        await use_case.execute(
             sqid='MISSING',
             new_mp_str='200',
             directory=directory,
         )
 
 
-def test_move_node_target_position_occupied_raises_error() -> None:
+@pytest.mark.asyncio
+async def test_move_node_target_position_occupied_raises_error() -> None:
     """Test moving to occupied position raises error."""
     # Arrange
     from linemark.use_cases.move_node import MoveNodeUseCase
@@ -183,14 +189,15 @@ title: Node Two
     import pytest
 
     with pytest.raises(ValueError, match='Target path .* already occupied'):
-        use_case.execute(
+        await use_case.execute(
             sqid='SQID1',
             new_mp_str='200',
             directory=directory,
         )
 
 
-def test_move_node_preserves_file_contents() -> None:
+@pytest.mark.asyncio
+async def test_move_node_preserves_file_contents() -> None:
     """Test moving node preserves draft content."""
     # Arrange
     from linemark.use_cases.move_node import MoveNodeUseCase
@@ -215,7 +222,7 @@ Some important content here.
     use_case = MoveNodeUseCase(filesystem=fs)
 
     # Act - move to 200
-    use_case.execute(
+    await use_case.execute(
         sqid='SQID1',
         new_mp_str='200',
         directory=directory,

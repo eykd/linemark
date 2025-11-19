@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import anyio
 import yaml
 
 from linemark.domain.exceptions import DoctypeNotFoundError, NodeNotFoundError
@@ -22,7 +23,7 @@ class ReadTypeAdapter:
     parsing YAML frontmatter, and returning body content.
     """
 
-    def read_type_body(
+    async def read_type_body(
         self,
         sqid: str,
         doctype: str,
@@ -47,17 +48,17 @@ class ReadTypeAdapter:
             ValueError: If file format is invalid (malformed frontmatter)
 
         """
-        file_path = self.resolve_file_path(sqid, doctype, directory)
+        file_path = await self.resolve_file_path(sqid, doctype, directory)
 
-        # Read file content
-        content = file_path.read_text(encoding='utf-8')
+        # Read file content using anyio
+        content = await anyio.Path(file_path).read_text(encoding='utf-8')
 
         # Parse frontmatter and body
         _, body = self._split_frontmatter_and_body(content)
 
         return body
 
-    def resolve_file_path(
+    async def resolve_file_path(
         self,
         sqid: str,
         doctype: str,
@@ -78,9 +79,12 @@ class ReadTypeAdapter:
             DoctypeNotFoundError: If the specific doctype file doesn't exist
 
         """
-        # Find all files matching the SQID pattern
+        # Find all files matching the SQID pattern using anyio
+        from pathlib import Path as PathlibPath
+
+        directory_anyio = anyio.Path(directory)
         pattern = f'*_{sqid}_*.md'
-        matching_files = list(directory.glob(pattern))
+        matching_files = [PathlibPath(p) async for p in directory_anyio.glob(pattern)]
 
         if not matching_files:
             msg = f'Node @{sqid} not found'
@@ -88,7 +92,7 @@ class ReadTypeAdapter:
 
         # Filter for the specific doctype
         doctype_pattern = f'*_{sqid}_{doctype}_*.md'
-        doctype_files = list(directory.glob(doctype_pattern))
+        doctype_files = [PathlibPath(p) async for p in directory_anyio.glob(doctype_pattern)]
 
         if not doctype_files:
             raise DoctypeNotFoundError(doctype, sqid)

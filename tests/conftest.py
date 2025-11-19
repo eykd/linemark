@@ -41,3 +41,67 @@ try:
 except ImportError:
     # pytest-textual-snapshot not installed
     pass
+
+
+def invoke_asyncclick_command(args: list[str], stdin_content: str | None = None) -> tuple[int, str, str]:
+    """Invoke an asyncclick command synchronously for testing.
+
+    This helper properly runs asyncclick commands in tests by setting sys.argv
+    and running the event loop to completion, capturing stdout and stderr.
+
+    Args:
+        args: Command-line arguments including the program name
+        stdin_content: Optional stdin input to provide to the command
+
+    Returns:
+        Tuple of (exit_code, stdout, stderr)
+
+    Example:
+        exit_code, stdout, stderr = invoke_asyncclick_command(['lmk', '--directory', '/tmp', 'add', 'Test'])
+        exit_code, stdout, stderr = invoke_asyncclick_command(['lmk', 'types', 'write', 'draft', '@ABC'], stdin_content='content')
+
+    """
+    import asyncio
+    import sys
+    from io import StringIO
+
+    from linemark.cli.main import lmk
+
+    # Set sys.argv for the command
+    original_argv = sys.argv
+    original_stdout = sys.stdout
+    original_stderr = sys.stderr
+    original_stdin = sys.stdin
+
+    stdout_capture = StringIO()
+    stderr_capture = StringIO()
+    stdin_input = StringIO(stdin_content) if stdin_content is not None else None
+    exit_code = [0]  # Use list to allow mutation in nested function
+
+    try:
+        sys.argv = args
+        sys.stdout = stdout_capture
+        sys.stderr = stderr_capture
+        if stdin_input is not None:
+            sys.stdin = stdin_input
+
+        async def run_command() -> int:
+            result = lmk.main(standalone_mode=False, prog_name=args[0])
+            if asyncio.iscoroutine(result):
+                code = await result
+            else:
+                code = result
+            return code if isinstance(code, int) else 0
+
+        # Run the async command
+        try:
+            exit_code[0] = asyncio.run(run_command())
+        except SystemExit as e:
+            exit_code[0] = e.code if isinstance(e.code, int) else 0
+    finally:
+        sys.argv = original_argv
+        sys.stdout = original_stdout
+        sys.stderr = original_stderr
+        sys.stdin = original_stdin
+
+    return exit_code[0], stdout_capture.getvalue(), stderr_capture.getvalue()

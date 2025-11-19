@@ -13,33 +13,34 @@ class FakeFileSystem:
     def __init__(self) -> None:
         self.files: dict[str, str] = {}
 
-    def read_file(self, path: Path) -> str:
+    async def read_file(self, path: Path) -> str:
         return self.files.get(str(path), '')
 
-    def write_file(self, path: Path, content: str) -> None:
+    async def write_file(self, path: Path, content: str) -> None:
         self.files[str(path)] = content
 
-    def delete_file(self, path: Path) -> None:
+    async def delete_file(self, path: Path) -> None:
         if str(path) in self.files:
             del self.files[str(path)]
 
-    def list_markdown_files(self, directory: Path) -> list[Path]:
+    async def list_markdown_files(self, directory: Path) -> list[Path]:
         return [Path(path) for path in self.files if path.endswith('.md') and path.startswith(str(directory))]
 
-    def file_exists(self, path: Path) -> bool:
+    async def file_exists(self, path: Path) -> bool:
         return str(path) in self.files
 
-    def create_directory(self, directory: Path) -> None:
+    async def create_directory(self, directory: Path) -> None:
         """Create directory (no-op for fake filesystem)."""
 
-    def rename_file(self, old_path: Path, new_path: Path) -> None:
+    async def rename_file(self, old_path: Path, new_path: Path) -> None:
         """Rename file."""
         if str(old_path) in self.files:
             self.files[str(new_path)] = self.files[str(old_path)]
             del self.files[str(old_path)]
 
 
-def test_compact_root_level_with_irregular_spacing() -> None:
+@pytest.mark.asyncio
+async def test_compact_root_level_with_irregular_spacing() -> None:
     """Test compacting root-level nodes with gaps."""
     from linemark.use_cases.compact_outline import CompactOutlineUseCase
 
@@ -59,7 +60,7 @@ def test_compact_root_level_with_irregular_spacing() -> None:
     use_case = CompactOutlineUseCase(filesystem=fs)
 
     # Compact root level (no parent SQID)
-    result = use_case.execute(sqid=None, directory=directory)
+    result = await use_case.execute(sqid=None, directory=directory)
 
     # Verify 4 nodes renamed
     assert len(result) == 4
@@ -76,7 +77,8 @@ def test_compact_root_level_with_irregular_spacing() -> None:
     assert str(directory / '003_SQID2_draft_node-two.md') not in fs.files
 
 
-def test_compact_specific_subtree() -> None:
+@pytest.mark.asyncio
+async def test_compact_specific_subtree() -> None:
     """Test compacting children of a specific node."""
     from linemark.use_cases.compact_outline import CompactOutlineUseCase
 
@@ -96,7 +98,7 @@ def test_compact_specific_subtree() -> None:
     use_case = CompactOutlineUseCase(filesystem=fs)
 
     # Compact children of PARENT
-    result = use_case.execute(sqid='PARENT', directory=directory)
+    result = await use_case.execute(sqid='PARENT', directory=directory)
 
     # Verify 3 children renamed
     assert len(result) == 3
@@ -110,7 +112,8 @@ def test_compact_specific_subtree() -> None:
     assert str(directory / '100_PARENT_draft_parent.md') in fs.files
 
 
-def test_compact_uses_10s_tier_for_medium_count() -> None:
+@pytest.mark.asyncio
+async def test_compact_uses_10s_tier_for_medium_count() -> None:
     """Test that 10s tier is used for 10-99 siblings."""
     from linemark.use_cases.compact_outline import CompactOutlineUseCase
 
@@ -126,7 +129,7 @@ def test_compact_uses_10s_tier_for_medium_count() -> None:
 
     use_case = CompactOutlineUseCase(filesystem=fs)
 
-    result = use_case.execute(sqid=None, directory=directory)
+    result = await use_case.execute(sqid=None, directory=directory)
 
     # Verify 12 nodes renamed
     assert len(result) == 12
@@ -137,7 +140,8 @@ def test_compact_uses_10s_tier_for_medium_count() -> None:
     assert str(directory / '120_SQID12_draft_node-12.md') in fs.files
 
 
-def test_compact_uses_1s_tier_for_large_count() -> None:
+@pytest.mark.asyncio
+async def test_compact_uses_1s_tier_for_large_count() -> None:
     """Test that 1s tier is used for 100+ siblings."""
     from linemark.use_cases.compact_outline import CompactOutlineUseCase
 
@@ -153,7 +157,7 @@ def test_compact_uses_1s_tier_for_large_count() -> None:
 
     use_case = CompactOutlineUseCase(filesystem=fs)
 
-    result = use_case.execute(sqid=None, directory=directory)
+    result = await use_case.execute(sqid=None, directory=directory)
 
     # Verify 105 nodes renamed
     assert len(result) == 105
@@ -164,7 +168,8 @@ def test_compact_uses_1s_tier_for_large_count() -> None:
     assert str(directory / '105_SQID105_draft_node-105.md') in fs.files
 
 
-def test_compact_preserves_hierarchy() -> None:
+@pytest.mark.asyncio
+async def test_compact_preserves_hierarchy() -> None:
     """Test that compacting one level doesn't affect other levels."""
     from linemark.use_cases.compact_outline import CompactOutlineUseCase
 
@@ -184,7 +189,7 @@ def test_compact_preserves_hierarchy() -> None:
     use_case = CompactOutlineUseCase(filesystem=fs)
 
     # Compact root level only
-    result = use_case.execute(sqid=None, directory=directory)
+    result = await use_case.execute(sqid=None, directory=directory)
 
     # Verify 2 root nodes renamed
     assert len(result) == 2
@@ -201,7 +206,8 @@ def test_compact_preserves_hierarchy() -> None:
     assert str(directory / '100-050_CHILD2_draft_child2.md') in fs.files
 
 
-def test_compact_nonexistent_sqid_raises_error() -> None:
+@pytest.mark.asyncio
+async def test_compact_nonexistent_sqid_raises_error() -> None:
     """Test compacting nonexistent node raises error."""
     from linemark.use_cases.compact_outline import CompactOutlineUseCase
 
@@ -211,10 +217,11 @@ def test_compact_nonexistent_sqid_raises_error() -> None:
     use_case = CompactOutlineUseCase(filesystem=fs)
 
     with pytest.raises(ValueError, match='Node with SQID .* not found'):
-        use_case.execute(sqid='MISSING', directory=directory)
+        await use_case.execute(sqid='MISSING', directory=directory)
 
 
-def test_compact_preserves_file_contents() -> None:
+@pytest.mark.asyncio
+async def test_compact_preserves_file_contents() -> None:
     """Test that compacting preserves file contents."""
     from linemark.use_cases.compact_outline import CompactOutlineUseCase
 
@@ -232,7 +239,7 @@ def test_compact_preserves_file_contents() -> None:
 
     use_case = CompactOutlineUseCase(filesystem=fs)
 
-    use_case.execute(sqid=None, directory=directory)
+    await use_case.execute(sqid=None, directory=directory)
 
     # Verify content preserved in renamed files
     assert fs.files[str(directory / '100_SQID1_draft_chapter.md')] == draft_content

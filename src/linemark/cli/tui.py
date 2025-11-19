@@ -15,7 +15,6 @@ from textual.widgets import (
     TextArea,
 )
 
-from linemark.adapters.agents.claude import ClaudeAgent
 from linemark.domain.agents import StreamEventType
 from linemark.ports.agents import AgentPort
 
@@ -26,6 +25,7 @@ class UserInputTextArea(TextArea):
     """A TextArea for user input."""
 
     async def _on_key(self, event: events.Key) -> None:
+        await super()._on_key(event)
         match event.character:
             case '\n':
                 self.insert('\n')
@@ -55,7 +55,6 @@ class AgentApp(App[None]):
     BINDINGS: ClassVar[list[Binding]] = [  # type: ignore[assignment]
         # priority=True overrides built-in widget bindings
         Binding('enter', 'submit_query', 'Submit Query', priority=True),
-        Binding('ctrl+d', 'quit', 'Quit', priority=True),
     ]
 
     def __init__(self, agent: AgentPort, testing: bool = False) -> None:  # noqa: FBT001, FBT002
@@ -113,6 +112,7 @@ class AgentApp(App[None]):
         """Run the agent to receive messages in the background."""
         async with self.agent:
             await self.append_markdown('=== Agent started ===\n\n')
+            await self.agent.submit_query("Let's get started!")
             # Receive messages from the agent in a loop:
             while True:
                 async for event in self.agent.receive_events():  # type: ignore[attr-defined]
@@ -135,9 +135,3 @@ class AgentApp(App[None]):
         to the Markdown document.
         """
         await self.markdown_stream.write(text)
-
-
-def main() -> None:  # pragma: no cover
-    """Main entry point"""
-    app = AgentApp(agent=ClaudeAgent())
-    app.run()

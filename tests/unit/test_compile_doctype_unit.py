@@ -17,7 +17,7 @@ class FakeFileSystem:
         self.files: dict[str, str] = {}
         self.directories: set[str] = set()
 
-    def read_file(self, path: Path) -> str:
+    async def read_file(self, path: Path) -> str:
         """Read file from in-memory storage."""
         key = str(path)
         if key not in self.files:
@@ -25,29 +25,29 @@ class FakeFileSystem:
             raise FileNotFoundError(msg)
         return self.files[key]
 
-    def file_exists(self, path: Path) -> bool:
+    async def file_exists(self, path: Path) -> bool:
         """Check if file exists in storage."""
         return str(path) in self.files
 
-    def list_markdown_files(self, directory: Path) -> list[Path]:
+    async def list_markdown_files(self, directory: Path) -> list[Path]:
         """List markdown files in directory."""
         dir_str = str(directory)
         return sorted([Path(path) for path in self.files if path.startswith(dir_str) and path.endswith('.md')])
 
-    def write_file(self, path: Path, content: str) -> None:
+    async def write_file(self, path: Path, content: str) -> None:
         """Write file to in-memory storage."""
         self.files[str(path)] = content
 
-    def delete_file(self, path: Path) -> None:
+    async def delete_file(self, path: Path) -> None:
         """Delete file from in-memory storage."""
         if str(path) in self.files:
             del self.files[str(path)]
 
-    def create_directory(self, directory: Path) -> None:
+    async def create_directory(self, directory: Path) -> None:
         """Create directory in in-memory storage."""
         self.directories.add(str(directory))
 
-    def rename_file(self, old_path: Path, new_path: Path) -> None:
+    async def rename_file(self, old_path: Path, new_path: Path) -> None:
         """Rename file in in-memory storage."""
         if str(old_path) in self.files:
             self.files[str(new_path)] = self.files[str(old_path)]
@@ -81,7 +81,8 @@ title: {title}
                 self.files[str(filepath)] = content
 
 
-def test_basic_forest_compilation() -> None:
+@pytest.mark.asyncio
+async def test_basic_forest_compilation() -> None:
     """Test T008: Compile entire forest with multiple nodes containing doctype."""
     from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
 
@@ -118,7 +119,7 @@ def test_basic_forest_compilation() -> None:
     use_case = CompileDoctypeUseCase(filesystem=fs)
 
     # Act
-    result = use_case.execute(
+    result = await use_case.execute(
         doctype='draft',
         directory=directory,
         sqid=None,
@@ -143,7 +144,8 @@ Chapter 2 content"""
     assert result == expected
 
 
-def test_skipping_nodes_without_doctype() -> None:
+@pytest.mark.asyncio
+async def test_skipping_nodes_without_doctype() -> None:
     """Test T009: Skip nodes that don't have the specified doctype."""
     from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
 
@@ -184,7 +186,7 @@ def test_skipping_nodes_without_doctype() -> None:
     use_case = CompileDoctypeUseCase(filesystem=fs)
 
     # Act
-    result = use_case.execute(
+    result = await use_case.execute(
         doctype='draft',
         directory=directory,
         sqid=None,
@@ -198,7 +200,8 @@ def test_skipping_nodes_without_doctype() -> None:
     assert result.count('---') == 5  # One separator between two items + 4 from frontmatter (2 per file)
 
 
-def test_skipping_empty_whitespace_files() -> None:
+@pytest.mark.asyncio
+async def test_skipping_empty_whitespace_files() -> None:
     """Test T010: Skip empty files and whitespace-only files."""
     from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
 
@@ -249,7 +252,7 @@ def test_skipping_empty_whitespace_files() -> None:
     use_case = CompileDoctypeUseCase(filesystem=fs)
 
     # Act
-    result = use_case.execute(
+    result = await use_case.execute(
         doctype='draft',
         directory=directory,
         sqid=None,
@@ -263,7 +266,8 @@ def test_skipping_empty_whitespace_files() -> None:
     assert result.count('---') == 5
 
 
-def test_doctype_not_found_error() -> None:
+@pytest.mark.asyncio
+async def test_doctype_not_found_error() -> None:
     """Test T011: Raise DoctypeNotFoundError when doctype doesn't exist."""
     from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
 
@@ -285,7 +289,7 @@ def test_doctype_not_found_error() -> None:
 
     # Act & Assert - should raise error for non-existent doctype
     with pytest.raises(DoctypeNotFoundError) as exc_info:
-        use_case.execute(
+        await use_case.execute(
             doctype='summary',
             directory=directory,
             sqid=None,
@@ -298,7 +302,8 @@ def test_doctype_not_found_error() -> None:
     assert 'summary' in str(exc_info.value)
 
 
-def test_empty_result_handling() -> None:
+@pytest.mark.asyncio
+async def test_empty_result_handling() -> None:
     """Test T012: Return empty string when all matching files are empty."""
     from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
 
@@ -327,7 +332,7 @@ def test_empty_result_handling() -> None:
     use_case = CompileDoctypeUseCase(filesystem=fs)
 
     # Act
-    result = use_case.execute(
+    result = await use_case.execute(
         doctype='draft',
         directory=directory,
         sqid=None,
@@ -343,7 +348,8 @@ def test_empty_result_handling() -> None:
 # =============================================================================
 
 
-def test_subtree_filtering_logic() -> None:
+@pytest.mark.asyncio
+async def test_subtree_filtering_logic() -> None:
     """Test T026: Filter nodes to specific subtree."""
     from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
 
@@ -392,7 +398,7 @@ def test_subtree_filtering_logic() -> None:
     use_case = CompileDoctypeUseCase(filesystem=fs)
 
     # Act - compile subtree rooted at SQID2 (001-001)
-    result = use_case.execute(
+    result = await use_case.execute(
         doctype='draft',
         directory=directory,
         sqid='SQID2',
@@ -407,7 +413,8 @@ def test_subtree_filtering_logic() -> None:
     assert 'Chapter 2 content' not in result
 
 
-def test_invalid_sqid_error() -> None:
+@pytest.mark.asyncio
+async def test_invalid_sqid_error() -> None:
     """Test T027: Raise NodeNotFoundError for invalid SQID."""
     from linemark.domain.exceptions import NodeNotFoundError
     from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
@@ -429,7 +436,7 @@ def test_invalid_sqid_error() -> None:
 
     # Act & Assert - should raise error for invalid SQID
     with pytest.raises(NodeNotFoundError) as exc_info:
-        use_case.execute(
+        await use_case.execute(
             doctype='draft',
             directory=directory,
             sqid='INVALID',
@@ -439,7 +446,8 @@ def test_invalid_sqid_error() -> None:
     assert 'INVALID' in str(exc_info.value)
 
 
-def test_sqid_with_no_matching_doctype() -> None:
+@pytest.mark.asyncio
+async def test_sqid_with_no_matching_doctype() -> None:
     """Test T028: Error when subtree has no nodes with requested doctype."""
     from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
 
@@ -470,7 +478,7 @@ def test_sqid_with_no_matching_doctype() -> None:
 
     # Act & Assert - should raise error when subtree has no 'summary' files
     with pytest.raises(DoctypeNotFoundError) as exc_info:
-        use_case.execute(
+        await use_case.execute(
             doctype='summary',
             directory=directory,
             sqid='SQID2',
@@ -481,7 +489,8 @@ def test_sqid_with_no_matching_doctype() -> None:
     assert exc_info.value.sqid == 'SQID2'
 
 
-def test_root_node_inclusion_in_subtree() -> None:
+@pytest.mark.asyncio
+async def test_root_node_inclusion_in_subtree() -> None:
     """Test T029: Root node of subtree is included if it has the doctype."""
     from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
 
@@ -511,7 +520,7 @@ def test_root_node_inclusion_in_subtree() -> None:
     use_case = CompileDoctypeUseCase(filesystem=fs)
 
     # Act - compile subtree rooted at SQID1
-    result = use_case.execute(
+    result = await use_case.execute(
         doctype='draft',
         directory=directory,
         sqid='SQID1',
@@ -523,7 +532,8 @@ def test_root_node_inclusion_in_subtree() -> None:
     assert 'Section 1.1 content' in result
 
 
-def test_leaf_node_no_children() -> None:
+@pytest.mark.asyncio
+async def test_leaf_node_no_children() -> None:
     """Test T030: Compile subtree for leaf node (no children)."""
     from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
 
@@ -553,7 +563,7 @@ def test_leaf_node_no_children() -> None:
     use_case = CompileDoctypeUseCase(filesystem=fs)
 
     # Act - compile subtree rooted at leaf node SQID2
-    result = use_case.execute(
+    result = await use_case.execute(
         doctype='draft',
         directory=directory,
         sqid='SQID2',
@@ -573,7 +583,8 @@ def test_leaf_node_no_children() -> None:
 # =============================================================================
 
 
-def test_custom_separator() -> None:
+@pytest.mark.asyncio
+async def test_custom_separator() -> None:
     """Test T041: Use custom separator between documents."""
     from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
 
@@ -601,7 +612,7 @@ def test_custom_separator() -> None:
     use_case = CompileDoctypeUseCase(filesystem=fs)
 
     # Act - use custom separator
-    result = use_case.execute(
+    result = await use_case.execute(
         doctype='draft',
         directory=directory,
         sqid=None,
@@ -614,7 +625,8 @@ def test_custom_separator() -> None:
     assert '===PAGE BREAK===' in result
 
 
-def test_escape_sequence_interpretation() -> None:
+@pytest.mark.asyncio
+async def test_escape_sequence_interpretation() -> None:
     r"""Test T042: Escape sequences like \\n, \\t are interpreted."""
     from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
 
@@ -642,7 +654,7 @@ def test_escape_sequence_interpretation() -> None:
     use_case = CompileDoctypeUseCase(filesystem=fs)
 
     # Act - use separator with escape sequences
-    result = use_case.execute(
+    result = await use_case.execute(
         doctype='draft',
         directory=directory,
         sqid=None,
@@ -655,7 +667,8 @@ def test_escape_sequence_interpretation() -> None:
     assert 'Chapter 2' in result
 
 
-def test_empty_separator() -> None:
+@pytest.mark.asyncio
+async def test_empty_separator() -> None:
     """Test T043: Empty separator concatenates documents directly."""
     from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
 
@@ -683,7 +696,7 @@ def test_empty_separator() -> None:
     use_case = CompileDoctypeUseCase(filesystem=fs)
 
     # Act - use empty separator
-    result = use_case.execute(
+    result = await use_case.execute(
         doctype='draft',
         directory=directory,
         sqid=None,
@@ -699,7 +712,8 @@ def test_empty_separator() -> None:
     )  # frontmatter prevents direct concat
 
 
-def test_default_separator_when_not_provided() -> None:
+@pytest.mark.asyncio
+async def test_default_separator_when_not_provided() -> None:
     """Test T044: Default separator is used when not explicitly provided."""
     from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
 
@@ -727,7 +741,7 @@ def test_default_separator_when_not_provided() -> None:
     use_case = CompileDoctypeUseCase(filesystem=fs)
 
     # Act - use default separator
-    result = use_case.execute(
+    result = await use_case.execute(
         doctype='draft',
         directory=directory,
         sqid=None,

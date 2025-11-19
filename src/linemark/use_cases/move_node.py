@@ -40,7 +40,7 @@ class MoveNodeUseCase:
         """
         self.filesystem = filesystem
 
-    def _load_outline(self, directory: Path) -> Outline:
+    async def _load_outline(self, directory: Path) -> Outline:
         """Load existing outline from directory.
 
         Args:
@@ -53,7 +53,7 @@ class MoveNodeUseCase:
         outline = Outline()
 
         # List all markdown files
-        md_files = self.filesystem.list_markdown_files(directory)
+        md_files = await self.filesystem.list_markdown_files(directory)
 
         # Parse each file
         for file_path in md_files:
@@ -71,7 +71,7 @@ class MoveNodeUseCase:
             if node is None:
                 # Read title from draft file
                 if doc_type == 'draft':
-                    content = self.filesystem.read_file(file_path)
+                    content = await self.filesystem.read_file(file_path)
                     title = self._extract_title_from_frontmatter(content)
                 else:
                     # Skip non-draft files if node doesn't exist yet
@@ -116,7 +116,7 @@ class MoveNodeUseCase:
 
         return 'Untitled'  # pragma: no cover
 
-    def execute(
+    async def execute(
         self,
         sqid: str,
         new_mp_str: str,
@@ -134,7 +134,7 @@ class MoveNodeUseCase:
 
         """
         # Load outline
-        outline = self._load_outline(directory)
+        outline = await self._load_outline(directory)
 
         # Parse new MP
         new_mp = MaterializedPath.from_string(new_mp_str)
@@ -174,7 +174,7 @@ class MoveNodeUseCase:
                 new_path = directory / new_filename
 
                 # Rename file
-                self.filesystem.rename_file(old_path, new_path)
+                await self.filesystem.rename_file(old_path, new_path)
 
     def _is_descendant_of(self, node: Node, ancestor_mp: MaterializedPath) -> bool:
         """Check if node is a descendant of the given materialized path.

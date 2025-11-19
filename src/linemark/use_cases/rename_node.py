@@ -39,7 +39,7 @@ class RenameNodeUseCase:
         self.filesystem = filesystem
         self.slugifier = slugifier
 
-    def _find_node_files(self, sqid: str, directory: Path) -> list[Path]:
+    async def _find_node_files(self, sqid: str, directory: Path) -> list[Path]:
         """Find all files belonging to a node.
 
         Args:
@@ -53,7 +53,7 @@ class RenameNodeUseCase:
             ValueError: If node not found
 
         """
-        all_files = self.filesystem.list_markdown_files(directory)
+        all_files = await self.filesystem.list_markdown_files(directory)
         node_files: list[Path] = []
 
         for filepath in all_files:
@@ -67,7 +67,7 @@ class RenameNodeUseCase:
 
         return node_files
 
-    def _update_draft_file(
+    async def _update_draft_file(
         self, draft_file: Path, mp: str, sqid: str, new_title: str, new_slug: str, old_slug: str
     ) -> None:
         """Update draft file with new title and rename if needed.
@@ -82,7 +82,7 @@ class RenameNodeUseCase:
 
         """
         # Read and parse draft file
-        draft_content = self.filesystem.read_file(draft_file)
+        draft_content = await self.filesystem.read_file(draft_file)
 
         # Split frontmatter and body
         parts = draft_content.split('---')
@@ -97,13 +97,13 @@ class RenameNodeUseCase:
             # Write updated draft to new filename
             new_draft_filename = f'{mp}_{sqid}_draft_{new_slug}.md'
             new_draft_path = draft_file.parent / new_draft_filename
-            self.filesystem.write_file(new_draft_path, new_content)
+            await self.filesystem.write_file(new_draft_path, new_content)
 
             # Delete old draft file if slug changed
             if old_slug != new_slug:
-                self.filesystem.delete_file(draft_file)
+                await self.filesystem.delete_file(draft_file)
 
-    def _rename_other_file(self, filepath: Path, mp: str, sqid: str, new_slug: str, old_slug: str) -> None:
+    async def _rename_other_file(self, filepath: Path, mp: str, sqid: str, new_slug: str, old_slug: str) -> None:
         """Rename a non-draft file if slug changed.
 
         Args:
@@ -119,7 +119,7 @@ class RenameNodeUseCase:
             return
 
         # Read content
-        content = self.filesystem.read_file(filepath)
+        content = await self.filesystem.read_file(filepath)
 
         # Extract document type from filename
         match = FILENAME_PATTERN.match(filepath.name)
@@ -133,10 +133,10 @@ class RenameNodeUseCase:
         new_path = filepath.parent / new_filename
 
         # Write to new location and delete old
-        self.filesystem.write_file(new_path, content)
-        self.filesystem.delete_file(filepath)
+        await self.filesystem.write_file(new_path, content)
+        await self.filesystem.delete_file(filepath)
 
-    def execute(self, sqid: str, new_title: str, directory: Path) -> None:
+    async def execute(self, sqid: str, new_title: str, directory: Path) -> None:
         """Rename a node by updating title and filenames.
 
         Updates the title in the draft file's YAML frontmatter and renames
@@ -152,7 +152,7 @@ class RenameNodeUseCase:
 
         """
         # Find all files for this node
-        node_files = self._find_node_files(sqid, directory)
+        node_files = await self._find_node_files(sqid, directory)
 
         # Generate new slug from new title
         new_slug = self.slugifier.slugify(new_title)
@@ -170,7 +170,7 @@ class RenameNodeUseCase:
         # Find and update draft file
         draft_file = next((f for f in node_files if '_draft_' in f.name), None)
         if draft_file:  # pragma: no branch
-            self._update_draft_file(draft_file, mp, sqid, new_title, new_slug, old_slug)
+            await self._update_draft_file(draft_file, mp, sqid, new_title, new_slug, old_slug)
 
         # Rename all other files
         for filepath in node_files:
@@ -182,4 +182,4 @@ class RenameNodeUseCase:
                 continue  # pragma: no cover
 
             file_old_slug = match.group('slug')
-            self._rename_other_file(filepath, mp, sqid, new_slug, file_old_slug)
+            await self._rename_other_file(filepath, mp, sqid, new_slug, file_old_slug)

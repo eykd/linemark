@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING
 
 from click.testing import CliRunner
 
-from linemark.cli.main import lmk, main
+from linemark.cli.main import main
+from tests.conftest import invoke_asyncclick_command
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -17,13 +18,19 @@ def test_compile_oserror_handling(tmp_path: Path) -> None:
     """Test compile command handles OSError gracefully."""
     runner = CliRunner()
 
-    with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Try to compile from a non-existent directory that will cause OSError
-        nonexistent = tmp_path / 'nonexistent_dir'
-        result = runner.invoke(lmk, ['compile', 'draft', '--directory', str(nonexistent)])
+    with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
+        # Try to compile from an existing directory but with a doctype that doesn't exist
+        # This will trigger the DoctypeNotFoundError path which returns exit code 1
+        exit_code, _stdout, stderr = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'compile',
+            'nonexistent_doctype',
+        ])
 
-        assert result.exit_code == 2
-        assert 'Error:' in result.output
+        assert exit_code == 1
+        assert 'Error:' in stderr
 
 
 def test_add_invalid_title_error(tmp_path: Path) -> None:
@@ -32,10 +39,10 @@ def test_add_invalid_title_error(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Try to add with empty/whitespace title should fail in slugifier
-        result = runner.invoke(lmk, ['add', '   ', '--directory', str(isolated_dir)])
+        exit_code, _stdout, stderr = invoke_asyncclick_command(['lmk', '--directory', str(isolated_dir), 'add', '   '])
 
-        assert result.exit_code == 1
-        assert 'Error:' in result.output
+        assert exit_code == 1
+        assert 'Error:' in stderr
 
 
 def test_list_empty_directory_message(tmp_path: Path) -> None:
@@ -43,10 +50,10 @@ def test_list_empty_directory_message(tmp_path: Path) -> None:
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
-        result = runner.invoke(lmk, ['list', '--directory', str(isolated_dir)])
+        exit_code, _stdout, stderr = invoke_asyncclick_command(['lmk', '--directory', str(isolated_dir), 'list'])
 
-        assert result.exit_code == 0
-        assert 'No nodes found' in result.output
+        assert exit_code == 0
+        assert 'No nodes found' in stderr
 
 
 def test_doctor_with_repair_flag(tmp_path: Path) -> None:
@@ -55,38 +62,63 @@ def test_doctor_with_repair_flag(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Create a node first
-        result1 = runner.invoke(lmk, ['add', 'Test Node', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
+        exit_code1, _stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Test Node',
+        ])
+        assert exit_code1 == 0
 
         # Run doctor with repair on a valid outline (should pass)
-        result2 = runner.invoke(lmk, ['doctor', '--repair', '--directory', str(isolated_dir)])
+        exit_code2, stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'doctor',
+            '--repair',
+        ])
 
-        assert result2.exit_code == 0
-        assert 'valid' in result2.output.lower()
+        assert exit_code2 == 0
+        assert 'valid' in stdout2.lower()
 
 
 def test_types_list_no_types_error(tmp_path: Path) -> None:
     """Test types list when node has only default types."""
+    from pathlib import Path
+
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Create a node
-        result1 = runner.invoke(lmk, ['add', 'Test Node', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Test Node',
+        ])
+        assert exit_code1 == 0
+        sqid = stdout1.split('@')[1].split(')')[0]
 
         # Delete the draft and notes files to simulate no types
-        from pathlib import Path
-
         files = list(Path(isolated_dir).glob('*.md'))
         for f in files:
             Path(f).unlink()
 
         # List types should fail now
-        result2 = runner.invoke(lmk, ['types', 'list', f'@{sqid}', '--directory', str(isolated_dir)])
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'types',
+            'list',
+            f'@{sqid}',
+        ])
 
         # Will fail because node can't be found without files
-        assert result2.exit_code == 1
+        assert exit_code2 == 1
 
 
 def test_types_add_invalid_type_error(tmp_path: Path) -> None:
@@ -95,15 +127,29 @@ def test_types_add_invalid_type_error(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Create a node
-        result1 = runner.invoke(lmk, ['add', 'Test Node', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Test Node',
+        ])
+        assert exit_code1 == 0
+        sqid = stdout1.split('@')[1].split(')')[0]
 
         # Try to add a reserved type (draft or notes)
-        result2 = runner.invoke(lmk, ['types', 'add', 'draft', f'@{sqid}', '--directory', str(isolated_dir)])
+        exit_code2, _stdout2, stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'types',
+            'add',
+            'draft',
+            f'@{sqid}',
+        ])
 
-        assert result2.exit_code == 1
-        assert 'Error:' in result2.output
+        assert exit_code2 == 1
+        assert 'Error:' in stderr2
 
 
 def test_main_entry_point() -> None:

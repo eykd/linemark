@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from linemark.use_cases.list_outline import ListOutlineUseCase
 
 
@@ -13,38 +15,39 @@ class FakeFileSystem:
     def __init__(self) -> None:
         self.files: dict[str, str] = {}
 
-    def read_file(self, path: Path) -> str:
+    async def read_file(self, path: Path) -> str:
         """Read file from in-memory storage."""
         return self.files.get(str(path), '')
 
-    def list_markdown_files(self, directory: Path) -> list[Path]:
+    async def list_markdown_files(self, directory: Path) -> list[Path]:
         """List markdown files in directory."""
         return [Path(path) for path in self.files if path.endswith('.md') and path.startswith(str(directory))]
 
-    def write_file(self, path: Path, content: str) -> None:
+    async def write_file(self, path: Path, content: str) -> None:
         """Write file to in-memory storage."""
         self.files[str(path)] = content
 
-    def delete_file(self, path: Path) -> None:
+    async def delete_file(self, path: Path) -> None:
         """Delete file from in-memory storage."""
         if str(path) in self.files:
             del self.files[str(path)]
 
-    def file_exists(self, path: Path) -> bool:
+    async def file_exists(self, path: Path) -> bool:
         """Check if file exists."""
         return str(path) in self.files
 
-    def create_directory(self, directory: Path) -> None:
+    async def create_directory(self, directory: Path) -> None:
         """Create directory (no-op for fake filesystem)."""
 
-    def rename_file(self, old_path: Path, new_path: Path) -> None:
+    async def rename_file(self, old_path: Path, new_path: Path) -> None:
         """Rename file."""
         if str(old_path) in self.files:
             self.files[str(new_path)] = self.files[str(old_path)]
             del self.files[str(old_path)]
 
 
-def test_list_outline_returns_empty_for_empty_directory() -> None:
+@pytest.mark.asyncio
+async def test_list_outline_returns_empty_for_empty_directory() -> None:
     """Test listing an empty directory returns empty outline."""
     # Arrange
     fs = FakeFileSystem()
@@ -53,13 +56,14 @@ def test_list_outline_returns_empty_for_empty_directory() -> None:
     use_case = ListOutlineUseCase(filesystem=fs)
 
     # Act
-    nodes = use_case.execute(directory=directory)
+    nodes = await use_case.execute(directory=directory)
 
     # Assert
     assert nodes == []
 
 
-def test_list_outline_returns_single_root_node() -> None:
+@pytest.mark.asyncio
+async def test_list_outline_returns_single_root_node() -> None:
     """Test listing directory with single node."""
     # Arrange
     fs = FakeFileSystem()
@@ -74,7 +78,7 @@ title: Chapter One
     use_case = ListOutlineUseCase(filesystem=fs)
 
     # Act
-    nodes = use_case.execute(directory=directory)
+    nodes = await use_case.execute(directory=directory)
 
     # Assert
     assert len(nodes) == 1
@@ -83,7 +87,8 @@ title: Chapter One
     assert nodes[0].mp.as_string == '100'
 
 
-def test_list_outline_returns_nodes_sorted_by_path() -> None:
+@pytest.mark.asyncio
+async def test_list_outline_returns_nodes_sorted_by_path() -> None:
     """Test listing returns nodes sorted lexicographically by materialized path."""
     # Arrange
     fs = FakeFileSystem()
@@ -111,7 +116,7 @@ title: Chapter Three
     use_case = ListOutlineUseCase(filesystem=fs)
 
     # Act
-    nodes = use_case.execute(directory=directory)
+    nodes = await use_case.execute(directory=directory)
 
     # Assert
     assert len(nodes) == 3
@@ -120,7 +125,8 @@ title: Chapter Three
     assert nodes[2].title == 'Chapter Three'
 
 
-def test_list_outline_handles_hierarchical_nodes() -> None:
+@pytest.mark.asyncio
+async def test_list_outline_handles_hierarchical_nodes() -> None:
     """Test listing handles parent-child relationships correctly."""
     # Arrange
     fs = FakeFileSystem()
@@ -157,7 +163,7 @@ title: Chapter Two
     use_case = ListOutlineUseCase(filesystem=fs)
 
     # Act
-    nodes = use_case.execute(directory=directory)
+    nodes = await use_case.execute(directory=directory)
 
     # Assert
     assert len(nodes) == 4
@@ -168,7 +174,8 @@ title: Chapter Two
     assert nodes[3].mp.as_string == '200'
 
 
-def test_list_outline_skips_invalid_filenames() -> None:
+@pytest.mark.asyncio
+async def test_list_outline_skips_invalid_filenames() -> None:
     """Test listing skips files that don't match the filename pattern."""
     # Arrange
     fs = FakeFileSystem()
@@ -189,14 +196,15 @@ title: Chapter One
     use_case = ListOutlineUseCase(filesystem=fs)
 
     # Act
-    nodes = use_case.execute(directory=directory)
+    nodes = await use_case.execute(directory=directory)
 
     # Assert - should only return the valid node
     assert len(nodes) == 1
     assert nodes[0].title == 'Chapter One'
 
 
-def test_list_outline_groups_document_types_by_node() -> None:
+@pytest.mark.asyncio
+async def test_list_outline_groups_document_types_by_node() -> None:
     """Test listing groups multiple document types for same node."""
     # Arrange
     fs = FakeFileSystem()
@@ -213,7 +221,7 @@ title: Chapter One
     use_case = ListOutlineUseCase(filesystem=fs)
 
     # Act
-    nodes = use_case.execute(directory=directory)
+    nodes = await use_case.execute(directory=directory)
 
     # Assert
     assert len(nodes) == 1
@@ -226,7 +234,8 @@ title: Chapter One
 # Subtree filtering tests (User Story 1)
 
 
-def test_execute_with_valid_sqid_filters_to_subtree() -> None:
+@pytest.mark.asyncio
+async def test_execute_with_valid_sqid_filters_to_subtree() -> None:
     """Test filtering outline to subtree with valid SQID."""
     # Arrange
     fs = FakeFileSystem()
@@ -263,7 +272,7 @@ title: Section Two
     use_case = ListOutlineUseCase(filesystem=fs)
 
     # Act
-    nodes = use_case.execute(directory=directory, root_sqid='sqid2')
+    nodes = await use_case.execute(directory=directory, root_sqid='sqid2')
 
     # Assert
     assert len(nodes) == 2  # sqid2 and its descendant sqid3
@@ -273,7 +282,8 @@ title: Section Two
     assert nodes[1].title == 'Subsection'
 
 
-def test_execute_with_leaf_sqid_returns_single_node() -> None:
+@pytest.mark.asyncio
+async def test_execute_with_leaf_sqid_returns_single_node() -> None:
     """Test filtering to leaf node returns only that node."""
     # Arrange
     fs = FakeFileSystem()
@@ -296,7 +306,7 @@ title: Section One
     use_case = ListOutlineUseCase(filesystem=fs)
 
     # Act
-    nodes = use_case.execute(directory=directory, root_sqid='sqid2')
+    nodes = await use_case.execute(directory=directory, root_sqid='sqid2')
 
     # Assert
     assert len(nodes) == 1
@@ -304,7 +314,8 @@ title: Section One
     assert nodes[0].title == 'Section One'
 
 
-def test_execute_with_invalid_sqid_raises_error() -> None:
+@pytest.mark.asyncio
+async def test_execute_with_invalid_sqid_raises_error() -> None:
     """Test filtering with invalid SQID raises ValueError."""
     # Arrange
     fs = FakeFileSystem()
@@ -323,10 +334,11 @@ title: Chapter One
     import pytest
 
     with pytest.raises(ValueError, match='SQID invalid not found'):
-        use_case.execute(directory=directory, root_sqid='invalid')
+        await use_case.execute(directory=directory, root_sqid='invalid')
 
 
-def test_execute_with_orphaned_sqid_returns_node_only() -> None:
+@pytest.mark.asyncio
+async def test_execute_with_orphaned_sqid_returns_node_only() -> None:
     """Test filtering with orphaned node returns just that node."""
     # Arrange
     fs = FakeFileSystem()
@@ -342,7 +354,7 @@ title: Orphan Node
     use_case = ListOutlineUseCase(filesystem=fs)
 
     # Act
-    nodes = use_case.execute(directory=directory, root_sqid='orphan')
+    nodes = await use_case.execute(directory=directory, root_sqid='orphan')
 
     # Assert
     assert len(nodes) == 1
@@ -350,7 +362,8 @@ title: Orphan Node
     assert nodes[0].title == 'Orphan Node'
 
 
-def test_execute_without_sqid_returns_all_nodes() -> None:
+@pytest.mark.asyncio
+async def test_execute_without_sqid_returns_all_nodes() -> None:
     """Test backward compatibility: no SQID returns full outline."""
     # Arrange
     fs = FakeFileSystem()
@@ -373,7 +386,7 @@ title: Section One
     use_case = ListOutlineUseCase(filesystem=fs)
 
     # Act
-    nodes = use_case.execute(directory=directory)
+    nodes = await use_case.execute(directory=directory)
 
     # Assert
     assert len(nodes) == 2  # All nodes returned

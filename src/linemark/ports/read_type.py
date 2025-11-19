@@ -23,7 +23,7 @@ class ReadTypePort(Protocol):
     - Raise appropriate exceptions for missing files or invalid formats
     """
 
-    def read_type_body(
+    async def read_type_body(
         self,
         sqid: str,
         doctype: str,
@@ -50,7 +50,7 @@ class ReadTypePort(Protocol):
         """
         ...
 
-    def resolve_file_path(
+    async def resolve_file_path(
         self,
         sqid: str,
         doctype: str,

@@ -7,7 +7,7 @@ from pathlib import Path
 import yaml
 from click.testing import CliRunner
 
-from linemark.cli.main import lmk
+from tests.conftest import invoke_asyncclick_command
 
 
 def test_rename_updates_title_and_filenames(tmp_path: Path) -> None:
@@ -16,15 +16,28 @@ def test_rename_updates_title_and_filenames(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add a node
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
+        sqid = stdout1.split('@')[1].split(')')[0]
 
         # Rename the node
-        result2 = runner.invoke(lmk, ['rename', f'@{sqid}', 'Chapter Two', '--directory', str(isolated_dir)])
-        assert result2.exit_code == 0
-        assert 'Renamed node' in result2.output
-        assert 'Chapter Two' in result2.output
+        exit_code2, stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'rename',
+            f'@{sqid}',
+            'Chapter Two',
+        ])
+        assert exit_code2 == 0
+        assert 'Renamed node' in stdout2
+        assert 'Chapter Two' in stdout2
 
         # Verify new files exist
         cwd = Path.cwd()
@@ -51,16 +64,26 @@ def test_rename_with_special_characters(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add a node
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
+        sqid = stdout1.split('@')[1].split(')')[0]
 
         # Rename with special characters
-        result2 = runner.invoke(
-            lmk,
-            ['rename', f'@{sqid}', "Chapter 1: Hero's Journey!", '--directory', str(isolated_dir)],
-        )
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'rename',
+            f'@{sqid}',
+            "Chapter 1: Hero's Journey!",
+        ])
+        assert exit_code2 == 0
 
         # Verify files exist with slugified names
         cwd = Path.cwd()
@@ -75,17 +98,38 @@ def test_rename_with_multiple_document_types(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add a node
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
+        sqid = stdout1.split('@')[1].split(')')[0]
 
         # Add additional document types
-        runner.invoke(lmk, ['types', 'add', 'characters', f'@{sqid}', '--directory', str(isolated_dir)])
-        runner.invoke(lmk, ['types', 'add', 'worldbuilding', f'@{sqid}', '--directory', str(isolated_dir)])
+        invoke_asyncclick_command(['lmk', '--directory', str(isolated_dir), 'types', 'add', 'characters', f'@{sqid}'])
+        invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'types',
+            'add',
+            'worldbuilding',
+            f'@{sqid}',
+        ])
 
         # Rename the node
-        result2 = runner.invoke(lmk, ['rename', f'@{sqid}', 'Chapter Two', '--directory', str(isolated_dir)])
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'rename',
+            f'@{sqid}',
+            'Chapter Two',
+        ])
+        assert exit_code2 == 0
 
         # Verify all document types renamed
         cwd = Path.cwd()
@@ -94,10 +138,10 @@ def test_rename_with_multiple_document_types(tmp_path: Path) -> None:
         char_files = list(cwd.glob(f'*_{sqid}_characters_chapter-two.md'))
         world_files = list(cwd.glob(f'*_{sqid}_worldbuilding_chapter-two.md'))
 
-        assert len(draft_files) == 1
-        assert len(notes_files) == 1
-        assert len(char_files) == 1
-        assert len(world_files) == 1
+        assert len(draft_files) == 1, f'Expected 1 draft file, found {len(draft_files)}'
+        assert len(notes_files) == 1, f'Expected 1 notes file, found {len(notes_files)}'
+        assert len(char_files) == 1, f'Expected 1 characters file, found {len(char_files)}'
+        assert len(world_files) == 1, f'Expected 1 worldbuilding file, found {len(world_files)}'
 
         # Verify old files don't exist
         old_files = list(cwd.glob(f'*_{sqid}_*_chapter-one.md'))
@@ -110,15 +154,27 @@ def test_rename_preserves_sqid_and_path(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add parent and child nodes
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        parent_sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
+        parent_sqid = stdout1.split('@')[1].split(')')[0]
 
-        result2 = runner.invoke(
-            lmk, ['add', 'Section 1.1', '--child-of', f'@{parent_sqid}', '--directory', str(isolated_dir)]
-        )
-        assert result2.exit_code == 0
-        child_sqid = result2.output.split('@')[1].split(')')[0]
+        exit_code2, stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Section 1.1',
+            '--child-of',
+            f'@{parent_sqid}',
+        ])
+        assert exit_code2 == 0
+        child_sqid = stdout2.split('@')[1].split(')')[0]
 
         # Get original MP for child
         cwd = Path.cwd()
@@ -126,8 +182,15 @@ def test_rename_preserves_sqid_and_path(tmp_path: Path) -> None:
         orig_mp = orig_draft.name.split('_')[0]
 
         # Rename child
-        result3 = runner.invoke(lmk, ['rename', f'@{child_sqid}', 'Section 1.2', '--directory', str(isolated_dir)])
-        assert result3.exit_code == 0
+        exit_code3, _stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'rename',
+            f'@{child_sqid}',
+            'Section 1.2',
+        ])
+        assert exit_code3 == 0
 
         # Verify SQID and MP preserved
         new_draft = next(iter(cwd.glob(f'*_{child_sqid}_draft_*.md')))
@@ -144,9 +207,15 @@ def test_rename_preserves_content(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add a node
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
+        sqid = stdout1.split('@')[1].split(')')[0]
 
         # Write content to draft
         cwd = Path.cwd()
@@ -162,8 +231,15 @@ def test_rename_preserves_content(tmp_path: Path) -> None:
         notes_file.write_text('Important notes here')
 
         # Rename the node
-        result2 = runner.invoke(lmk, ['rename', f'@{sqid}', 'Chapter Two', '--directory', str(isolated_dir)])
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'rename',
+            f'@{sqid}',
+            'Chapter Two',
+        ])
+        assert exit_code2 == 0
 
         # Verify content preserved
         new_draft = next(iter(cwd.glob(f'*_{sqid}_draft_chapter-two.md')))
@@ -183,9 +259,17 @@ def test_rename_nonexistent_node_fails(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Try to rename nonexistent node
-        result = runner.invoke(lmk, ['rename', '@NONEXISTENT', 'New Title', '--directory', str(isolated_dir)])
-        assert result.exit_code != 0
-        assert 'not found' in result.output
+        exit_code, stdout, stderr = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'rename',
+            '@NONEXISTENT',
+            'New Title',
+        ])
+        assert exit_code != 0
+        output = stdout + stderr
+        assert 'not found' in output
 
 
 def test_rename_integration_with_list(tmp_path: Path) -> None:
@@ -194,19 +278,38 @@ def test_rename_integration_with_list(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add nodes
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid1 = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
+        sqid1 = stdout1.split('@')[1].split(')')[0]
 
-        result2 = runner.invoke(lmk, ['add', 'Chapter Two', '--directory', str(isolated_dir)])
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter Two',
+        ])
+        assert exit_code2 == 0
 
         # Rename first node
-        result3 = runner.invoke(lmk, ['rename', f'@{sqid1}', 'Prologue', '--directory', str(isolated_dir)])
-        assert result3.exit_code == 0
+        exit_code3, _stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'rename',
+            f'@{sqid1}',
+            'Prologue',
+        ])
+        assert exit_code3 == 0
 
         # List and verify new name appears
-        result4 = runner.invoke(lmk, ['list', '--directory', str(isolated_dir)])
-        assert result4.exit_code == 0
-        assert 'Prologue' in result4.output
-        assert 'Chapter Two' in result4.output
+        exit_code4, stdout4, _stderr4 = invoke_asyncclick_command(['lmk', '--directory', str(isolated_dir), 'list'])
+        assert exit_code4 == 0
+        assert 'Prologue' in stdout4
+        assert 'Chapter Two' in stdout4

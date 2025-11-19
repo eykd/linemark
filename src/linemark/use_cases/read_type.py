@@ -29,7 +29,7 @@ class ReadTypeUseCase:
         """
         self.read_type_port = read_type_port
 
-    def execute(
+    async def execute(
         self,
         sqid: str,
         doctype: str,
@@ -54,4 +54,4 @@ class ReadTypeUseCase:
             ValueError: If file format is invalid (malformed frontmatter)
 
         """
-        return self.read_type_port.read_type_body(sqid, doctype, directory)
+        return await self.read_type_port.read_type_body(sqid, doctype, directory)

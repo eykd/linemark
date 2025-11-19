@@ -6,14 +6,17 @@ file iteration in outline order, and result generation.
 
 from __future__ import annotations
 
+from pathlib import Path as PathlibPath
 from typing import TYPE_CHECKING
+
+import anyio
 
 from linemark.domain.search import compile_search_pattern, extract_sqid_from_filename
 from linemark.ports.search import SearchResult
 
 if TYPE_CHECKING:
     import re
-    from collections.abc import Iterator
+    from collections.abc import AsyncIterator
     from pathlib import Path
 
 
@@ -54,11 +57,11 @@ class SearchAdapter:
             literal=literal,
         )
 
-    def search_file(
+    async def search_file(
         self,
         path: Path,
         pattern: re.Pattern[str],
-    ) -> Iterator[tuple[int, str]]:
+    ) -> AsyncIterator[tuple[int, str]]:
         """Search a single file for pattern matches.
 
         Args:
@@ -74,6 +77,8 @@ class SearchAdapter:
             UnicodeDecodeError: If file cannot be decoded with any supported encoding
 
         """
+        path_anyio = anyio.Path(path)
+
         # Try multiple encodings in order of preference
         encodings = [
             ('utf-8', 'strict'),
@@ -85,14 +90,14 @@ class SearchAdapter:
         content = None
         for encoding, errors in encodings:
             try:
-                content = path.read_text(encoding=encoding, errors=errors)
+                content = await path_anyio.read_text(encoding=encoding, errors=errors)
                 break
             except (UnicodeDecodeError, LookupError):  # pragma: no cover
                 continue  # pragma: no cover
 
         if content is None:  # pragma: no cover
             # Fallback: read as bytes and decode with latin-1 (always works)
-            content = path.read_bytes().decode('latin-1')  # pragma: no cover
+            content = (await path_anyio.read_bytes()).decode('latin-1')  # pragma: no cover
 
         lines = content.splitlines()
 
@@ -100,13 +105,13 @@ class SearchAdapter:
             if pattern.search(line):
                 yield line_number, line
 
-    def get_files_in_outline_order(
+    async def get_files_in_outline_order(
         self,
         directory: Path,
         *,
         subtree_sqid: str | None = None,
         doctypes: list[str] | None = None,
-    ) -> Iterator[Path]:
+    ) -> AsyncIterator[Path]:
         """Get files in outline order with optional filtering.
 
         Args:
@@ -121,26 +126,35 @@ class SearchAdapter:
             FileNotFoundError: If directory doesn't exist
 
         """
-        # Build glob pattern
+        directory_anyio = anyio.Path(directory)
+
+        # Build glob patterns and collect files
+        files: list[PathlibPath] = []
+
         if subtree_sqid and doctypes:
             # Filter by both subtree and doctypes
             for doctype in doctypes:
                 pattern = f'{subtree_sqid}*_{doctype}_*.md'
-                yield from sorted(directory.glob(pattern))
+                # Convert anyio.Path back to pathlib.Path
+                files.extend([PathlibPath(str(path_obj)) async for path_obj in directory_anyio.glob(pattern)])
         elif subtree_sqid:
             # Filter by subtree only
             pattern = f'{subtree_sqid}*.md'
-            yield from sorted(directory.glob(pattern))
+            files.extend([PathlibPath(str(path_obj)) async for path_obj in directory_anyio.glob(pattern)])
         elif doctypes:
             # Filter by doctypes only
             for doctype in doctypes:
                 pattern = f'*_{doctype}_*.md'
-                yield from sorted(directory.glob(pattern))
+                files.extend([PathlibPath(str(path_obj)) async for path_obj in directory_anyio.glob(pattern)])
         else:
             # No filters, search only linemark outline files (pattern: *_*_*.md)
             # This matches files with at least 2 underscores (position_SQID_doctype_slug.md)
             # and excludes non-linemark files like README.md
-            yield from sorted(directory.glob('*_*_*.md'))
+            files.extend([PathlibPath(str(path_obj)) async for path_obj in directory_anyio.glob('*_*_*.md')])
+
+        # Sort and yield
+        for file_path in sorted(files):
+            yield file_path
 
     def extract_sqid_from_filename(self, filename: str) -> str:
         """Extract SQID from a linemark filename.
@@ -157,14 +171,14 @@ class SearchAdapter:
         """
         return extract_sqid_from_filename(filename)
 
-    def search_outline(
+    async def search_outline(
         self,
         pattern: re.Pattern[str],
         directory: Path,
         *,
         subtree_sqid: str | None = None,
         doctypes: list[str] | None = None,
-    ) -> Iterator[SearchResult]:
+    ) -> AsyncIterator[SearchResult]:
         """Search across outline files for pattern matches.
 
         Args:
@@ -182,13 +196,11 @@ class SearchAdapter:
             UnicodeDecodeError: If files are not valid UTF-8
 
         """
-        files = self.get_files_in_outline_order(
+        async for file_path in self.get_files_in_outline_order(
             directory,
             subtree_sqid=subtree_sqid,
             doctypes=doctypes,
-        )
-
-        for file_path in files:
+        ):
             filename = file_path.name
 
             # Extract SQID from filename
@@ -199,7 +211,7 @@ class SearchAdapter:
                 continue
 
             # Search file for matches
-            for line_number, content in self.search_file(file_path, pattern):
+            async for line_number, content in self.search_file(file_path, pattern):
                 yield SearchResult(
                     sqid=sqid,
                     filename=filename,

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from linemark.domain.entities import MaterializedPath
 from linemark.use_cases.add_node import AddNodeUseCase
 
@@ -15,34 +17,34 @@ class FakeFileSystem:
         self.files: dict[str, str] = {}
         self.directories: set[str] = set()
 
-    def read_file(self, path: Path) -> str:
+    async def read_file(self, path: Path) -> str:
         """Read file from in-memory storage."""
         return self.files.get(str(path), '')
 
-    def write_file(self, path: Path, content: str) -> None:
+    async def write_file(self, path: Path, content: str) -> None:
         """Write file to in-memory storage."""
         self.files[str(path)] = content
 
-    def delete_file(self, path: Path) -> None:
+    async def delete_file(self, path: Path) -> None:
         """Delete file from in-memory storage."""
         if str(path) in self.files:
             del self.files[str(path)]
 
-    def rename_file(self, old_path: Path, new_path: Path) -> None:
+    async def rename_file(self, old_path: Path, new_path: Path) -> None:
         """Rename file in in-memory storage."""
         if str(old_path) in self.files:
             self.files[str(new_path)] = self.files[str(old_path)]
             del self.files[str(old_path)]
 
-    def list_markdown_files(self, directory: Path) -> list[Path]:
+    async def list_markdown_files(self, directory: Path) -> list[Path]:
         """List markdown files in directory."""
         return [Path(path) for path in self.files if path.endswith('.md') and path.startswith(str(directory))]
 
-    def file_exists(self, path: Path) -> bool:
+    async def file_exists(self, path: Path) -> bool:
         """Check if file exists in in-memory storage."""
         return str(path) in self.files
 
-    def create_directory(self, path: Path) -> None:
+    async def create_directory(self, path: Path) -> None:
         """Create directory in in-memory storage."""
         self.directories.add(str(path))
 
@@ -80,7 +82,8 @@ class FakeSlugifier:
         return text.lower()
 
 
-def test_add_node_creates_root_node_with_draft_and_notes() -> None:
+@pytest.mark.asyncio
+async def test_add_node_creates_root_node_with_draft_and_notes() -> None:
     """Test adding a root node creates draft and notes files."""
     # Arrange
     fs = FakeFileSystem()
@@ -95,7 +98,7 @@ def test_add_node_creates_root_node_with_draft_and_notes() -> None:
     )
 
     # Act
-    result = use_case.execute(title='Chapter One', directory=directory)
+    result = await use_case.execute(title='Chapter One', directory=directory)
 
     # Assert
     assert len(fs.files) == 2
@@ -116,7 +119,8 @@ def test_add_node_creates_root_node_with_draft_and_notes() -> None:
     assert str(Path(directory) / notes_filename) in fs.files
 
 
-def test_add_node_as_child_creates_nested_path() -> None:
+@pytest.mark.asyncio
+async def test_add_node_as_child_creates_nested_path() -> None:
     """Test adding a child node creates correct materialized path."""
     # Arrange
     fs = FakeFileSystem()
@@ -138,7 +142,7 @@ title: Chapter One
     )
 
     # Act
-    result = use_case.execute(
+    result = await use_case.execute(
         title='Section 1.1',
         directory=directory,
         parent_sqid='SQID1',
@@ -151,7 +155,8 @@ title: Chapter One
     assert result.mp.parent() == parent_mp
 
 
-def test_add_node_increments_sqid_counter() -> None:
+@pytest.mark.asyncio
+async def test_add_node_increments_sqid_counter() -> None:
     """Test adding multiple nodes increments SQID counter."""
     # Arrange
     fs = FakeFileSystem()
@@ -166,9 +171,9 @@ def test_add_node_increments_sqid_counter() -> None:
     )
 
     # Act
-    node1 = use_case.execute(title='Chapter One', directory=directory)
-    node2 = use_case.execute(title='Chapter Two', directory=directory)
-    node3 = use_case.execute(title='Chapter Three', directory=directory)
+    node1 = await use_case.execute(title='Chapter One', directory=directory)
+    node2 = await use_case.execute(title='Chapter Two', directory=directory)
+    node3 = await use_case.execute(title='Chapter Three', directory=directory)
 
     # Assert
     assert node1.sqid.value == 'SQID1'
@@ -179,7 +184,8 @@ def test_add_node_increments_sqid_counter() -> None:
     assert node3.mp.as_string == '300'
 
 
-def test_add_node_with_special_characters_in_title() -> None:
+@pytest.mark.asyncio
+async def test_add_node_with_special_characters_in_title() -> None:
     """Test adding node with special characters creates valid slug."""
     # Arrange
     fs = FakeFileSystem()
@@ -194,14 +200,15 @@ def test_add_node_with_special_characters_in_title() -> None:
     )
 
     # Act
-    result = use_case.execute(title="Writer's Guide: Advanced!", directory=directory)
+    result = await use_case.execute(title="Writer's Guide: Advanced!", directory=directory)
 
     # Assert
     assert result.title == "Writer's Guide: Advanced!"
     assert result.slug == 'writers-guide-advanced'
 
 
-def test_add_node_loads_existing_outline_from_directory() -> None:
+@pytest.mark.asyncio
+async def test_add_node_loads_existing_outline_from_directory() -> None:
     """Test adding node to directory with existing nodes loads outline."""
     # Arrange
     fs = FakeFileSystem()
@@ -223,14 +230,15 @@ title: Chapter One
     )
 
     # Act
-    result = use_case.execute(title='Chapter Two', directory=directory)
+    result = await use_case.execute(title='Chapter Two', directory=directory)
 
     # Assert - should create sibling at position 200
     assert result.mp.as_string == '200'
     assert result.sqid.value == 'SQID2'
 
 
-def test_add_node_respects_tiered_numbering() -> None:
+@pytest.mark.asyncio
+async def test_add_node_respects_tiered_numbering() -> None:
     """Test adding multiple nodes uses tiered numbering (100/10/1)."""
     # Arrange
     fs = FakeFileSystem()
@@ -245,7 +253,7 @@ def test_add_node_respects_tiered_numbering() -> None:
     )
 
     # Act - add 12 nodes to test tier transitions
-    nodes = [use_case.execute(title=f'Chapter {i}', directory=directory) for i in range(1, 13)]
+    nodes = [await use_case.execute(title=f'Chapter {i}', directory=directory) for i in range(1, 13)]
 
     # Assert tier 100 for first 9 nodes
     assert nodes[0].mp.as_string == '100'
@@ -258,7 +266,8 @@ def test_add_node_respects_tiered_numbering() -> None:
     assert nodes[11].mp.as_string == '930'
 
 
-def test_add_node_with_nonexistent_parent_raises_error() -> None:
+@pytest.mark.asyncio
+async def test_add_node_with_nonexistent_parent_raises_error() -> None:
     """Test adding child to nonexistent parent raises ValueError."""
     # Arrange
     fs = FakeFileSystem()
@@ -273,17 +282,16 @@ def test_add_node_with_nonexistent_parent_raises_error() -> None:
     )
 
     # Act & Assert
-    import pytest
-
     with pytest.raises(ValueError, match='Parent node with SQID NONEXISTENT not found'):
-        use_case.execute(
+        await use_case.execute(
             title='Child Node',
             directory=directory,
             parent_sqid='NONEXISTENT',
         )
 
 
-def test_add_node_with_nonexistent_sibling_raises_error() -> None:
+@pytest.mark.asyncio
+async def test_add_node_with_nonexistent_sibling_raises_error() -> None:
     """Test adding sibling to nonexistent node raises ValueError."""
     # Arrange
     fs = FakeFileSystem()
@@ -298,17 +306,16 @@ def test_add_node_with_nonexistent_sibling_raises_error() -> None:
     )
 
     # Act & Assert
-    import pytest
-
     with pytest.raises(ValueError, match='Sibling node with SQID NONEXISTENT not found'):
-        use_case.execute(
+        await use_case.execute(
             title='Sibling Node',
             directory=directory,
             sibling_sqid='NONEXISTENT',
         )
 
 
-def test_add_node_with_malformed_frontmatter() -> None:
+@pytest.mark.asyncio
+async def test_add_node_with_malformed_frontmatter() -> None:
     """Test loading nodes with malformed frontmatter uses 'Untitled'."""
     # Arrange
     fs = FakeFileSystem()
@@ -341,7 +348,7 @@ Content here"""
     )
 
     # Act - add a new node which should load the existing outline
-    result = use_case.execute(title='New Node', directory=directory)
+    result = await use_case.execute(title='New Node', directory=directory)
 
     # Assert - the use case should have loaded the existing nodes
     # We can't directly check the loaded outline, but the new node should
@@ -349,7 +356,8 @@ Content here"""
     assert result.mp.as_string == '400'
 
 
-def test_add_node_skips_non_matching_files() -> None:
+@pytest.mark.asyncio
+async def test_add_node_skips_non_matching_files() -> None:
     """Test that files not matching the filename pattern are skipped."""
     # Arrange
     fs = FakeFileSystem()
@@ -368,13 +376,14 @@ def test_add_node_skips_non_matching_files() -> None:
     )
 
     # Act - should not fail despite invalid files
-    result = use_case.execute(title='First Node', directory=directory)
+    result = await use_case.execute(title='First Node', directory=directory)
 
     # Assert - should create first node normally
     assert result.mp.as_string == '100'
 
 
-def test_add_node_skips_non_draft_files_without_node() -> None:
+@pytest.mark.asyncio
+async def test_add_node_skips_non_draft_files_without_node() -> None:
     """Test that non-draft files are skipped if node doesn't exist yet."""
     # Arrange
     fs = FakeFileSystem()
@@ -392,13 +401,14 @@ def test_add_node_skips_non_draft_files_without_node() -> None:
     )
 
     # Act - should skip the orphaned notes file
-    result = use_case.execute(title='First Node', directory=directory)
+    result = await use_case.execute(title='First Node', directory=directory)
 
     # Assert - should create node at 100 despite notes file existing
     assert result.mp.as_string == '100'
 
 
-def test_add_node_as_sibling_at_root_level() -> None:
+@pytest.mark.asyncio
+async def test_add_node_as_sibling_at_root_level() -> None:
     """Test adding a node as sibling to a root-level node."""
     # Arrange
     fs = FakeFileSystem()
@@ -420,7 +430,7 @@ title: Chapter One
     )
 
     # Act - add as sibling to root node
-    result = use_case.execute(
+    result = await use_case.execute(
         title='Chapter Two',
         directory=directory,
         sibling_sqid='SQID1',
@@ -431,7 +441,8 @@ title: Chapter One
     assert result.mp.as_string == '200'
 
 
-def test_add_node_as_sibling_to_child_node() -> None:
+@pytest.mark.asyncio
+async def test_add_node_as_sibling_to_child_node() -> None:
     """Test adding a node as sibling to a non-root node."""
     # Arrange
     fs = FakeFileSystem()
@@ -458,7 +469,7 @@ title: Section One
     )
 
     # Act - add as sibling to child node (SQID2 at 100-100)
-    result = use_case.execute(
+    result = await use_case.execute(
         title='Section Two',
         directory=directory,
         sibling_sqid='SQID2',

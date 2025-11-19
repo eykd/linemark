@@ -6,7 +6,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from linemark.cli.main import lmk
+from tests.conftest import invoke_asyncclick_command
 
 
 def test_move_node_to_root(tmp_path: Path) -> None:
@@ -15,25 +15,45 @@ def test_move_node_to_root(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add parent and child
-        result1 = runner.invoke(lmk, ['add', 'Parent', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Parent',
+        ])
+        assert exit_code1 == 0
 
         # Extract parent SQID
-        sqid_parent = result1.output.split('@')[1].split(')')[0]
+        sqid_parent = stdout1.split('@')[1].split(')')[0]
 
         # Add child
-        result2 = runner.invoke(
-            lmk, ['add', 'Child', '--child-of', f'@{sqid_parent}', '--directory', str(isolated_dir)]
-        )
-        assert result2.exit_code == 0
+        exit_code2, stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Child',
+            '--child-of',
+            f'@{sqid_parent}',
+        ])
+        assert exit_code2 == 0
 
         # Extract child SQID
-        sqid_child = result2.output.split('@')[1].split(')')[0]
+        sqid_child = stdout2.split('@')[1].split(')')[0]
 
         # Move child to root at position 200
-        result3 = runner.invoke(lmk, ['move', f'@{sqid_child}', '--to', '200', '--directory', str(isolated_dir)])
-        assert result3.exit_code == 0
-        assert f'Moved node @{sqid_child} to 200' in result3.output
+        exit_code3, stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'move',
+            f'@{sqid_child}',
+            '--to',
+            '200',
+        ])
+        assert exit_code3 == 0
+        assert f'Moved node @{sqid_child} to 200' in stdout3
 
         # Verify files were renamed
         cwd = Path.cwd()
@@ -47,24 +67,50 @@ def test_move_node_to_new_parent(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add parent1
-        result1 = runner.invoke(lmk, ['add', 'Parent One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid_parent1 = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Parent One',
+        ])
+        assert exit_code1 == 0
+        sqid_parent1 = stdout1.split('@')[1].split(')')[0]
 
         # Add parent2
-        result2 = runner.invoke(lmk, ['add', 'Parent Two', '--directory', str(isolated_dir)])
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Parent Two',
+        ])
+        assert exit_code2 == 0
 
         # Add child to parent1
-        result3 = runner.invoke(
-            lmk, ['add', 'Child', '--child-of', f'@{sqid_parent1}', '--directory', str(isolated_dir)]
-        )
-        assert result3.exit_code == 0
-        sqid_child = result3.output.split('@')[1].split(')')[0]
+        exit_code3, stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Child',
+            '--child-of',
+            f'@{sqid_parent1}',
+        ])
+        assert exit_code3 == 0
+        sqid_child = stdout3.split('@')[1].split(')')[0]
 
         # Move child from parent1 to parent2 (at position 200-100)
-        result4 = runner.invoke(lmk, ['move', f'@{sqid_child}', '--to', '200-100', '--directory', str(isolated_dir)])
-        assert result4.exit_code == 0
+        exit_code4, _stdout4, _stderr4 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'move',
+            f'@{sqid_child}',
+            '--to',
+            '200-100',
+        ])
+        assert exit_code4 == 0
 
         # Verify files renamed
         cwd = Path.cwd()
@@ -78,27 +124,53 @@ def test_move_node_with_descendants_cascades(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add parent
-        result1 = runner.invoke(lmk, ['add', 'Parent', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid_parent = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Parent',
+        ])
+        assert exit_code1 == 0
+        sqid_parent = stdout1.split('@')[1].split(')')[0]
 
         # Add child
-        result2 = runner.invoke(
-            lmk, ['add', 'Child', '--child-of', f'@{sqid_parent}', '--directory', str(isolated_dir)]
-        )
-        assert result2.exit_code == 0
-        sqid_child = result2.output.split('@')[1].split(')')[0]
+        exit_code2, stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Child',
+            '--child-of',
+            f'@{sqid_parent}',
+        ])
+        assert exit_code2 == 0
+        sqid_child = stdout2.split('@')[1].split(')')[0]
 
         # Add grandchild
-        result3 = runner.invoke(
-            lmk, ['add', 'Grandchild', '--child-of', f'@{sqid_child}', '--directory', str(isolated_dir)]
-        )
-        assert result3.exit_code == 0
-        sqid_grandchild = result3.output.split('@')[1].split(')')[0]
+        exit_code3, stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Grandchild',
+            '--child-of',
+            f'@{sqid_child}',
+        ])
+        assert exit_code3 == 0
+        sqid_grandchild = stdout3.split('@')[1].split(')')[0]
 
         # Move child to root at 300 (should cascade grandchild to 300-100)
-        result4 = runner.invoke(lmk, ['move', f'@{sqid_child}', '--to', '300', '--directory', str(isolated_dir)])
-        assert result4.exit_code == 0
+        exit_code4, _stdout4, _stderr4 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'move',
+            f'@{sqid_child}',
+            '--to',
+            '300',
+        ])
+        assert exit_code4 == 0
 
         # Verify child files at 300
         cwd = Path.cwd()
@@ -116,9 +188,18 @@ def test_move_command_error_handling(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Try to move non-existent node
-        result1 = runner.invoke(lmk, ['move', '@MISSING', '--to', '200', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 1
-        assert 'Error' in result1.output
+        exit_code1, stdout1, stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'move',
+            '@MISSING',
+            '--to',
+            '200',
+        ])
+        assert exit_code1 == 1
+        output = stdout1 + stderr1
+        assert 'Error' in output
 
 
 def test_move_preserves_content(tmp_path: Path) -> None:
@@ -127,9 +208,15 @@ def test_move_preserves_content(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add node
-        result1 = runner.invoke(lmk, ['add', 'My Node', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'My Node',
+        ])
+        assert exit_code1 == 0
+        sqid = stdout1.split('@')[1].split(')')[0]
 
         # Edit draft file to add custom content
         cwd = Path.cwd()
@@ -143,8 +230,16 @@ def test_move_preserves_content(tmp_path: Path) -> None:
         draft_file.write_text(custom_content)
 
         # Move node
-        result2 = runner.invoke(lmk, ['move', f'@{sqid}', '--to', '500', '--directory', str(isolated_dir)])
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'move',
+            f'@{sqid}',
+            '--to',
+            '500',
+        ])
+        assert exit_code2 == 0
 
         # Verify content preserved
         new_draft_files = list(cwd.glob(f'500_{sqid}_draft_*.md'))
@@ -160,30 +255,56 @@ def test_move_and_list_workflow(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add nodes: root1, root2, root1-child
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid1 = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
+        sqid1 = stdout1.split('@')[1].split(')')[0]
 
-        result2 = runner.invoke(lmk, ['add', 'Chapter Two', '--directory', str(isolated_dir)])
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter Two',
+        ])
+        assert exit_code2 == 0
 
-        result3 = runner.invoke(
-            lmk, ['add', 'Section 1.1', '--child-of', f'@{sqid1}', '--directory', str(isolated_dir)]
-        )
-        assert result3.exit_code == 0
-        sqid_child = result3.output.split('@')[1].split(')')[0]
+        exit_code3, stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Section 1.1',
+            '--child-of',
+            f'@{sqid1}',
+        ])
+        assert exit_code3 == 0
+        sqid_child = stdout3.split('@')[1].split(')')[0]
 
         # List before move
-        result4 = runner.invoke(lmk, ['list', '--directory', str(isolated_dir)])
-        assert result4.exit_code == 0
-        assert 'Chapter One' in result4.output
-        assert 'Section 1.1' in result4.output
+        exit_code4, stdout4, _stderr4 = invoke_asyncclick_command(['lmk', '--directory', str(isolated_dir), 'list'])
+        assert exit_code4 == 0
+        assert 'Chapter One' in stdout4
+        assert 'Section 1.1' in stdout4
 
         # Move Section 1.1 to root at 300
-        result5 = runner.invoke(lmk, ['move', f'@{sqid_child}', '--to', '300', '--directory', str(isolated_dir)])
-        assert result5.exit_code == 0
+        exit_code5, _stdout5, _stderr5 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'move',
+            f'@{sqid_child}',
+            '--to',
+            '300',
+        ])
+        assert exit_code5 == 0
 
         # List after move - Section 1.1 should be at root level
-        result6 = runner.invoke(lmk, ['list', '--directory', str(isolated_dir)])
-        assert result6.exit_code == 0
-        assert 'Section 1.1' in result6.output
+        exit_code6, stdout6, _stderr6 = invoke_asyncclick_command(['lmk', '--directory', str(isolated_dir), 'list'])
+        assert exit_code6 == 0
+        assert 'Section 1.1' in stdout6

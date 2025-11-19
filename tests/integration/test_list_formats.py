@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from click.testing import CliRunner
 
-from linemark.cli.main import lmk
+from tests.conftest import invoke_asyncclick_command
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -19,32 +19,48 @@ def test_list_tree_format(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Create hierarchy
-        result1 = runner.invoke(lmk, ['add', 'Parent', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        parent_sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Parent',
+        ])
+        assert exit_code1 == 0
+        parent_sqid = stdout1.split('@')[1].split(')')[0]
 
-        result2 = runner.invoke(
-            lmk,
-            ['add', 'Child One', '--child-of', f'@{parent_sqid}', '--directory', str(isolated_dir)],
-        )
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Child One',
+            '--child-of',
+            f'@{parent_sqid}',
+        ])
+        assert exit_code2 == 0
 
-        result3 = runner.invoke(
-            lmk,
-            ['add', 'Child Two', '--child-of', f'@{parent_sqid}', '--directory', str(isolated_dir)],
-        )
-        assert result3.exit_code == 0
+        exit_code3, _stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Child Two',
+            '--child-of',
+            f'@{parent_sqid}',
+        ])
+        assert exit_code3 == 0
 
         # List in tree format (default)
-        result4 = runner.invoke(lmk, ['list', '--directory', str(isolated_dir)])
-        assert result4.exit_code == 0
+        exit_code4, stdout4, _stderr4 = invoke_asyncclick_command(['lmk', '--directory', str(isolated_dir), 'list'])
+        assert exit_code4 == 0
 
         # Verify tree characters present
-        assert 'Parent' in result4.output
-        assert 'Child One' in result4.output
-        assert 'Child Two' in result4.output
+        assert 'Parent' in stdout4
+        assert 'Child One' in stdout4
+        assert 'Child Two' in stdout4
         # Tree should have indentation/box characters
-        assert '├──' in result4.output or '└──' in result4.output
+        assert '├──' in stdout4 or '└──' in stdout4
 
 
 def test_list_json_format(tmp_path: Path) -> None:
@@ -53,19 +69,39 @@ def test_list_json_format(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Create hierarchy
-        result1 = runner.invoke(lmk, ['add', 'Root Node', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        root_sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Root Node',
+        ])
+        assert exit_code1 == 0
+        root_sqid = stdout1.split('@')[1].split(')')[0]
 
-        result2 = runner.invoke(lmk, ['add', 'Child', '--child-of', f'@{root_sqid}', '--directory', str(isolated_dir)])
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Child',
+            '--child-of',
+            f'@{root_sqid}',
+        ])
+        assert exit_code2 == 0
 
         # List in JSON format
-        result3 = runner.invoke(lmk, ['list', '--json', '--directory', str(isolated_dir)])
-        assert result3.exit_code == 0
+        exit_code3, stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'list',
+            '--json',
+        ])
+        assert exit_code3 == 0
 
         # Parse JSON output
-        data = json.loads(result3.output)
+        data = json.loads(stdout3)
 
         # Verify structure
         assert isinstance(data, list)
@@ -91,28 +127,50 @@ def test_list_json_preserves_hierarchy(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Create 3-level hierarchy
-        result1 = runner.invoke(lmk, ['add', 'Level 1', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        level1_sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Level 1',
+        ])
+        assert exit_code1 == 0
+        level1_sqid = stdout1.split('@')[1].split(')')[0]
 
-        result2 = runner.invoke(
-            lmk,
-            ['add', 'Level 2', '--child-of', f'@{level1_sqid}', '--directory', str(isolated_dir)],
-        )
-        assert result2.exit_code == 0
-        level2_sqid = result2.output.split('@')[1].split(')')[0]
+        exit_code2, stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Level 2',
+            '--child-of',
+            f'@{level1_sqid}',
+        ])
+        assert exit_code2 == 0
+        level2_sqid = stdout2.split('@')[1].split(')')[0]
 
-        result3 = runner.invoke(
-            lmk,
-            ['add', 'Level 3', '--child-of', f'@{level2_sqid}', '--directory', str(isolated_dir)],
-        )
-        assert result3.exit_code == 0
+        exit_code3, _stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Level 3',
+            '--child-of',
+            f'@{level2_sqid}',
+        ])
+        assert exit_code3 == 0
 
         # Get JSON output
-        result4 = runner.invoke(lmk, ['list', '--json', '--directory', str(isolated_dir)])
-        assert result4.exit_code == 0
+        exit_code4, stdout4, _stderr4 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'list',
+            '--json',
+        ])
+        assert exit_code4 == 0
 
-        data = json.loads(result4.output)
+        data = json.loads(stdout4)
 
         # Navigate hierarchy
         assert data[0]['title'] == 'Level 1'
@@ -126,29 +184,39 @@ def test_list_json_with_siblings(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Create parent with multiple children
-        result1 = runner.invoke(lmk, ['add', 'Parent', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        parent_sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Parent',
+        ])
+        assert exit_code1 == 0
+        parent_sqid = stdout1.split('@')[1].split(')')[0]
 
         for i in range(1, 4):
-            result = runner.invoke(
-                lmk,
-                [
-                    'add',
-                    f'Child {i}',
-                    '--child-of',
-                    f'@{parent_sqid}',
-                    '--directory',
-                    str(isolated_dir),
-                ],
-            )
-            assert result.exit_code == 0
+            exit_code_child, _stdout_child, _stderr_child = invoke_asyncclick_command([
+                'lmk',
+                '--directory',
+                str(isolated_dir),
+                'add',
+                f'Child {i}',
+                '--child-of',
+                f'@{parent_sqid}',
+            ])
+            assert exit_code_child == 0
 
         # Get JSON output
-        result_json = runner.invoke(lmk, ['list', '--json', '--directory', str(isolated_dir)])
-        assert result_json.exit_code == 0
+        exit_code_json, stdout_json, _stderr_json = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'list',
+            '--json',
+        ])
+        assert exit_code_json == 0
 
-        data = json.loads(result_json.output)
+        data = json.loads(stdout_json)
 
         # Verify parent has 3 children
         assert len(data[0]['children']) == 3
@@ -164,9 +232,10 @@ def test_list_empty_outline(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # List empty outline
-        result = runner.invoke(lmk, ['list', '--directory', str(isolated_dir)])
-        assert result.exit_code == 0
-        assert 'No nodes found' in result.output
+        exit_code, stdout, stderr = invoke_asyncclick_command(['lmk', '--directory', str(isolated_dir), 'list'])
+        assert exit_code == 0
+        output = stdout + stderr
+        assert 'No nodes found' in output
 
 
 def test_list_json_empty_outline(tmp_path: Path) -> None:
@@ -175,10 +244,16 @@ def test_list_json_empty_outline(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # List empty outline as JSON
-        result = runner.invoke(lmk, ['list', '--json', '--directory', str(isolated_dir)])
-        assert result.exit_code == 0
+        exit_code, stdout, _stderr = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'list',
+            '--json',
+        ])
+        assert exit_code == 0
         # JSON format returns empty array for empty outline
-        data = json.loads(result.output)
+        data = json.loads(stdout)
         assert data == []
 
 
@@ -188,25 +263,48 @@ def test_list_formats_show_same_content(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Create nodes
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
+        exit_code1, _stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
 
-        result2 = runner.invoke(lmk, ['add', 'Chapter Two', '--directory', str(isolated_dir)])
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter Two',
+        ])
+        assert exit_code2 == 0
 
         # Get tree format
-        result_tree = runner.invoke(lmk, ['list', '--directory', str(isolated_dir)])
-        assert result_tree.exit_code == 0
+        exit_code_tree, stdout_tree, _stderr_tree = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'list',
+        ])
+        assert exit_code_tree == 0
 
         # Get JSON format
-        result_json = runner.invoke(lmk, ['list', '--json', '--directory', str(isolated_dir)])
-        assert result_json.exit_code == 0
+        exit_code_json, stdout_json, _stderr_json = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'list',
+            '--json',
+        ])
+        assert exit_code_json == 0
 
         # Both should show both chapters
-        assert 'Chapter One' in result_tree.output
-        assert 'Chapter Two' in result_tree.output
+        assert 'Chapter One' in stdout_tree
+        assert 'Chapter Two' in stdout_tree
 
-        data = json.loads(result_json.output)
+        data = json.loads(stdout_json)
         titles = [node['title'] for node in data]
         assert 'Chapter One' in titles
         assert 'Chapter Two' in titles

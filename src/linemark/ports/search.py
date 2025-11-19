@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict
 
 if TYPE_CHECKING:
     import re
-    from collections.abc import Iterator
+    from collections.abc import AsyncIterator
 
 
 class SearchResult(BaseModel):
@@ -100,7 +100,7 @@ class SearchPort(Protocol):
         self,
         path: Path,
         pattern: re.Pattern[str],
-    ) -> Iterator[tuple[int, str]]:
+    ) -> AsyncIterator[tuple[int, str]]:
         """Search a single file for pattern matches.
 
         Searches line-by-line for memory efficiency. Yields matches as
@@ -127,7 +127,7 @@ class SearchPort(Protocol):
         *,
         subtree_sqid: str | None = None,
         doctypes: list[str] | None = None,
-    ) -> Iterator[Path]:
+    ) -> AsyncIterator[Path]:
         """Get files to search in outline position order.
 
         Files are returned in hierarchical order (depth-first traversal)
@@ -177,7 +177,7 @@ class SearchPort(Protocol):
         *,
         subtree_sqid: str | None = None,
         doctypes: list[str] | None = None,
-    ) -> Iterator[SearchResult]:
+    ) -> AsyncIterator[SearchResult]:
         """Search across the outline for pattern matches.
 
         Combines get_files_in_outline_order and search_file to search

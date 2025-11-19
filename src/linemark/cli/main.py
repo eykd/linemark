@@ -5,40 +5,42 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import click
+import asyncclick as click
 
-from linemark.adapters.filesystem import FileSystemAdapter
-from linemark.adapters.read_type_adapter import ReadTypeAdapter
-from linemark.adapters.search_adapter import SearchAdapter
-from linemark.adapters.slugifier import SlugifierAdapter
-from linemark.adapters.sqid_generator import SQIDGeneratorAdapter
-from linemark.adapters.write_type_adapter import WriteTypeAdapter
 from linemark.cli.formatters import format_json, format_tree
+from linemark.commanders import LinemarkCommander
 from linemark.domain.exceptions import DoctypeNotFoundError, InvalidRegexError, NodeNotFoundError
-from linemark.use_cases.add_node import AddNodeUseCase
-from linemark.use_cases.compact_outline import CompactOutlineUseCase
-from linemark.use_cases.compile_doctype import CompileDoctypeUseCase
-from linemark.use_cases.delete_node import DeleteNodeUseCase
-from linemark.use_cases.list_outline import ListOutlineUseCase
-from linemark.use_cases.manage_types import ManageTypesUseCase
-from linemark.use_cases.move_node import MoveNodeUseCase
-from linemark.use_cases.read_type import ReadTypeUseCase
-from linemark.use_cases.rename_node import RenameNodeUseCase
-from linemark.use_cases.search import SearchUseCase
-from linemark.use_cases.validate_outline import ValidateOutlineUseCase
-from linemark.use_cases.write_type import WriteTypeUseCase
 
 
 @click.group()
-def lmk() -> None:
+@click.option(
+    '--directory',
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=Path.cwd(),
+    help='Working directory (default: current directory)',
+)
+@click.pass_context
+def lmk(ctx: click.Context, directory: Path) -> None:
     """Linemark - Hierarchical Markdown Outline Manager.
 
     A command-line tool for managing hierarchical outlines of Markdown documents
     using filename-based organization.
     """
+    ctx.obj = {'directory': directory}
 
 
-@lmk.command()
+@lmk.command(name='agent')
+@click.pass_context
+def agent(ctx: click.Context) -> None:  # noqa: ARG001  # pragma: no cover
+    """Start the agent."""
+    from linemark.adapters.agents.s5_identity.assistant import AssistantAgent  # pragma: no cover
+    from linemark.cli.tui import AgentApp  # pragma: no cover
+
+    app = AgentApp(agent=AssistantAgent())  # pragma: no cover
+    app.run()  # pragma: no cover
+
+
+@lmk.command(name='compile')
 @click.argument('doctype')
 @click.argument('sqid', required=False)
 @click.option(
@@ -46,17 +48,12 @@ def lmk() -> None:
     default='\n\n---\n\n',
     help='Separator between documents (escape sequences interpreted)',
 )
-@click.option(
-    '--directory',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=Path.cwd(),
-    help='Working directory (default: current directory)',
-)
-def compile(  # noqa: A001
+@click.pass_context
+async def compile_doctype(
+    ctx: click.Context,
     doctype: str,
     sqid: str | None,
     separator: str,
-    directory: Path,
 ) -> None:
     """Compile all doctype files into a single document.
 
@@ -84,18 +81,10 @@ def compile(  # noqa: A001
 
     """
     try:
-        # Strip @ prefix if provided
-        clean_sqid = sqid.lstrip('@') if sqid else None
-
-        # Create adapter
-        filesystem = FileSystemAdapter()
-
-        # Execute use case
-        use_case = CompileDoctypeUseCase(filesystem=filesystem)
-        result = use_case.execute(
+        commander = LinemarkCommander(directory=ctx.obj['directory'])
+        result = await commander.compile_doctype(
             doctype=doctype,
-            directory=directory,
-            sqid=clean_sqid,
+            sqid=sqid.lstrip('@') if sqid else None,
             separator=separator,
         )
 
@@ -132,24 +121,13 @@ def compile(  # noqa: A001
     is_flag=True,
     help='Insert before sibling (requires --sibling-of)',
 )
-@click.option(
-    '--after',
-    is_flag=True,
-    help='Insert after sibling (requires --sibling-of)',
-)
-@click.option(
-    '--directory',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=Path.cwd(),
-    help='Working directory (default: current directory)',
-)
-def add(
+@click.pass_context
+async def add(
+    ctx: click.Context,
     title: str,
     child_of: str | None,
     sibling_of: str | None,
     before: bool,  # noqa: FBT001
-    after: bool,  # noqa: ARG001, FBT001
-    directory: Path,
 ) -> None:
     """Add a new outline node.
 
@@ -173,27 +151,11 @@ def add(
 
     """
     try:
-        # Strip @ prefix if provided
-        parent_sqid = child_of.lstrip('@') if child_of else None
-        sibling_sqid = sibling_of.lstrip('@') if sibling_of else None
-
-        # Create adapters
-        filesystem = FileSystemAdapter()
-        sqid_generator = SQIDGeneratorAdapter()
-        slugifier = SlugifierAdapter()
-
-        # Execute use case
-        use_case = AddNodeUseCase(
-            filesystem=filesystem,
-            sqid_generator=sqid_generator,
-            slugifier=slugifier,
-        )
-
-        node = use_case.execute(
+        commander = LinemarkCommander(directory=ctx.obj['directory'])
+        node = await commander.add(
             title=title,
-            directory=directory,
-            parent_sqid=parent_sqid,
-            sibling_sqid=sibling_sqid,
+            child_of=child_of.lstrip('@') if child_of else None,
+            sibling_of=sibling_of.lstrip('@') if sibling_of else None,
             before=before,
         )
 
@@ -227,13 +189,8 @@ def add(
     is_flag=True,
     help='Output in JSON format instead of tree',
 )
-@click.option(
-    '--directory',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=Path.cwd(),
-    help='Working directory (default: current directory)',
-)
-def list(sqid: str | None, show_doctypes: bool, show_files: bool, output_json: bool, directory: Path) -> None:  # noqa: A001, FBT001
+@click.pass_context
+async def list(ctx: click.Context, sqid: str | None, show_doctypes: bool, show_files: bool, output_json: bool) -> None:  # noqa: A001, FBT001
     """List all nodes in the outline, optionally filtered to a subtree.
 
     Displays the outline as a tree structure by default, or as nested JSON
@@ -260,14 +217,10 @@ def list(sqid: str | None, show_doctypes: bool, show_files: bool, output_json: b
     """
     try:
         # Strip @ prefix if provided
-        clean_sqid = sqid.lstrip('@') if sqid else None
+        sqid_clean = sqid.lstrip('@') if sqid else None
 
-        # Create adapter
-        filesystem = FileSystemAdapter()
-
-        # Execute use case
-        use_case = ListOutlineUseCase(filesystem=filesystem)
-        nodes = use_case.execute(directory=directory, root_sqid=clean_sqid)
+        commander = LinemarkCommander(directory=ctx.obj['directory'])
+        nodes = await commander.list_nodes(sqid=sqid_clean)
 
         # Format and output
         if output_json:
@@ -306,18 +259,13 @@ def list(sqid: str | None, show_doctypes: bool, show_files: bool, output_json: b
     help='Insert after this SQID (requires --to to be parent)',
     metavar='SQID',
 )
-@click.option(
-    '--directory',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=Path.cwd(),
-    help='Working directory (default: current directory)',
-)
-def move(
+@click.pass_context
+async def move(
+    ctx: click.Context,
     sqid: str,
     target_mp: str,
     target_sqid_before: str | None,  # noqa: ARG001
     target_sqid_after: str | None,  # noqa: ARG001
-    directory: Path,
 ) -> None:
     """Move a node to a new position in the outline.
 
@@ -343,22 +291,11 @@ def move(
         # Strip @ prefix if provided
         sqid_clean = sqid.lstrip('@')
 
-        # Target is materialized path string
-        target_mp_clean = target_mp
-
-        # Create adapter
-        filesystem = FileSystemAdapter()
-
-        # Execute use case
-        use_case = MoveNodeUseCase(filesystem=filesystem)
-        use_case.execute(
-            sqid=sqid_clean,
-            new_mp_str=target_mp_clean,
-            directory=directory,
-        )
+        commander = LinemarkCommander(directory=ctx.obj['directory'])
+        await commander.move(sqid=sqid_clean, target_mp=target_mp)
 
         # Output success message
-        click.echo(f'Moved node @{sqid_clean} to {target_mp_clean}')
+        click.echo(f'Moved node @{sqid_clean} to {target_mp}')
         click.echo('All files renamed successfully')
 
     except ValueError as e:
@@ -369,13 +306,8 @@ def move(
 @lmk.command()
 @click.argument('sqid')
 @click.argument('new_title')
-@click.option(
-    '--directory',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=Path.cwd(),
-    help='Working directory (default: current directory)',
-)
-def rename(sqid: str, new_title: str, directory: Path) -> None:
+@click.pass_context
+async def rename(ctx: click.Context, sqid: str, new_title: str) -> None:
     """Rename a node with a new title.
 
     Updates the title in the draft file's frontmatter and renames all
@@ -397,13 +329,8 @@ def rename(sqid: str, new_title: str, directory: Path) -> None:
         # Strip @ prefix if provided
         sqid_clean = sqid.lstrip('@')
 
-        # Create adapters
-        filesystem = FileSystemAdapter()
-        slugifier = SlugifierAdapter()
-
-        # Execute use case
-        use_case = RenameNodeUseCase(filesystem=filesystem, slugifier=slugifier)
-        use_case.execute(sqid=sqid_clean, new_title=new_title, directory=directory)
+        commander = LinemarkCommander(directory=ctx.obj['directory'])
+        await commander.rename(sqid=sqid_clean, new_title=new_title)
 
         # Output success message
         click.echo(f'Renamed node @{sqid_clean} to "{new_title}"')
@@ -428,13 +355,8 @@ def rename(sqid: str, new_title: str, directory: Path) -> None:
     is_flag=True,
     help='Delete node but promote children to parent level',
 )
-@click.option(
-    '--directory',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=Path.cwd(),
-    help='Working directory (default: current directory)',
-)
-def delete(sqid: str, recursive: bool, promote: bool, directory: Path) -> None:  # noqa: FBT001
+@click.pass_context
+async def delete(ctx: click.Context, sqid: str, recursive: bool, promote: bool) -> None:  # noqa: FBT001
     """Delete a node from the outline.
 
     By default, only deletes leaf nodes (nodes without children).
@@ -460,16 +382,12 @@ def delete(sqid: str, recursive: bool, promote: bool, directory: Path) -> None: 
         # Strip @ prefix if provided
         sqid_clean = sqid.lstrip('@')
 
-        # Create adapter
-        filesystem = FileSystemAdapter()
-
-        # Execute use case
-        use_case = DeleteNodeUseCase(filesystem=filesystem)
-        deleted = use_case.execute(sqid=sqid_clean, directory=directory, recursive=recursive, promote=promote)
+        commander = LinemarkCommander(directory=ctx.obj['directory'])
+        deleted_nodes = await commander.delete(sqid=sqid_clean, recursive=recursive, promote=promote)
 
         # Output success message
         if recursive:
-            click.echo(f'Deleted node @{sqid_clean} and {len(deleted) - 1} descendants')
+            click.echo(f'Deleted node @{sqid_clean} and {len(deleted_nodes) - 1} descendants')
         elif promote:
             click.echo(f'Deleted node @{sqid_clean} (children promoted to parent level)')
         else:
@@ -482,13 +400,8 @@ def delete(sqid: str, recursive: bool, promote: bool, directory: Path) -> None: 
 
 @lmk.command()
 @click.argument('sqid', required=False)
-@click.option(
-    '--directory',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=Path.cwd(),
-    help='Working directory (default: current directory)',
-)
-def compact(sqid: str | None, directory: Path) -> None:
+@click.pass_context
+async def compact(ctx: click.Context, sqid: str | None) -> None:
     """Restore clean, evenly-spaced numbering to the outline.
 
     Renumbers siblings at the specified level with even spacing (100s/10s/1s tier).
@@ -508,19 +421,14 @@ def compact(sqid: str | None, directory: Path) -> None:
     try:
         # Strip @ prefix if provided
         sqid_clean = sqid.lstrip('@') if sqid else None
-
-        # Create adapter
-        filesystem = FileSystemAdapter()
-
-        # Execute use case
-        use_case = CompactOutlineUseCase(filesystem=filesystem)
-        renamed = use_case.execute(sqid=sqid_clean, directory=directory)
+        commander = LinemarkCommander(directory=ctx.obj['directory'])
+        compacted_nodes = await commander.compact(sqid=sqid_clean)
 
         # Output success message
         if sqid_clean:
-            click.echo(f'Compacted {len(renamed)} children of @{sqid_clean}')
+            click.echo(f'Compacted {len(compacted_nodes)} children of @{sqid_clean}')
         else:
-            click.echo(f'Compacted {len(renamed)} root-level nodes')
+            click.echo(f'Compacted {len(compacted_nodes)} root-level nodes')
 
     except ValueError as e:
         click.echo(f'Error: {e}', err=True)
@@ -533,13 +441,8 @@ def compact(sqid: str | None, directory: Path) -> None:
     is_flag=True,
     help='Auto-repair common issues (missing files, etc.)',
 )
-@click.option(
-    '--directory',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=Path.cwd(),
-    help='Working directory (default: current directory)',
-)
-def doctor(repair: bool, directory: Path) -> None:  # noqa: FBT001
+@click.pass_context
+async def doctor(ctx: click.Context, repair: bool) -> None:  # noqa: FBT001
     """Validate outline integrity and repair common issues.
 
     Checks for duplicate SQIDs, missing required files, and other integrity issues.
@@ -557,12 +460,8 @@ def doctor(repair: bool, directory: Path) -> None:  # noqa: FBT001
 
     """
     try:
-        # Create adapter
-        filesystem = FileSystemAdapter()
-
-        # Execute use case
-        use_case = ValidateOutlineUseCase(filesystem=filesystem)
-        result = use_case.execute(directory=directory, repair=repair)
+        commander = LinemarkCommander(directory=ctx.obj['directory'])
+        result = await commander.doctor(repair=repair)
 
         # Output results
         if result['valid']:
@@ -618,13 +517,9 @@ def doctor(repair: bool, directory: Path) -> None:  # noqa: FBT001
     is_flag=True,
     help='Output results as JSON (one per line)',
 )
-@click.option(
-    '--directory',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=Path.cwd(),
-    help='Working directory (default: current directory)',
-)
-def search(
+@click.pass_context
+async def search(
+    ctx: click.Context,
     pattern: str,
     subtree_sqid: str | None,
     doctypes: tuple[str, ...],
@@ -632,7 +527,6 @@ def search(
     multiline: bool,  # noqa: FBT001
     literal: bool,  # noqa: FBT001
     output_json: bool,  # noqa: FBT001
-    directory: Path,
 ) -> None:
     """Search for patterns across the outline.
 
@@ -684,27 +578,21 @@ def search(
         # Convert doctypes tuple to list or None
         doctype_list = list(doctypes) if doctypes else None
 
-        # Create adapter
-        search_adapter = SearchAdapter()
+        commander = LinemarkCommander(directory=ctx.obj['directory'])
 
-        # Execute use case
-        use_case = SearchUseCase(search_port=search_adapter)
-        results = use_case.execute(
+        # Output results
+        async for result in commander.search(
             pattern=pattern,
-            directory=directory,
             subtree_sqid=subtree_sqid,
             doctypes=doctype_list,
             case_sensitive=case_sensitive,
             multiline=multiline,
             literal=literal,
-        )
-
-        # Output results
-        for result in results:
+        ):
             if output_json:
-                click.echo(use_case.format_json(result))
+                click.echo(result.format_json())
             else:
-                click.echo(use_case.format_plaintext(result))
+                click.echo(result.format_plaintext())
 
     except InvalidRegexError as e:
         click.echo(f'Error: {e}', err=True)
@@ -725,13 +613,8 @@ def types() -> None:
 
 @types.command('list')
 @click.argument('sqid')
-@click.option(
-    '--directory',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=Path.cwd(),
-    help='Working directory (default: current directory)',
-)
-def types_list(sqid: str, directory: Path) -> None:
+@click.pass_context
+async def types_list(ctx: click.Context, sqid: str) -> None:
     """List all document types for a node.
 
     Shows all document types associated with the specified node SQID.
@@ -747,12 +630,8 @@ def types_list(sqid: str, directory: Path) -> None:
         # Strip @ prefix if provided
         sqid_clean = sqid.lstrip('@')
 
-        # Create adapter
-        filesystem = FileSystemAdapter()
-
-        # Execute use case
-        use_case = ManageTypesUseCase(filesystem=filesystem)
-        doc_types = use_case.list_types(sqid=sqid_clean, directory=directory)
+        commander = LinemarkCommander(directory=ctx.obj['directory'])
+        doc_types = await commander.list_types(sqid=sqid_clean)
 
         # Output types
         if doc_types:
@@ -771,13 +650,8 @@ def types_list(sqid: str, directory: Path) -> None:
 @types.command('add')
 @click.argument('doc_type')
 @click.argument('sqid')
-@click.option(
-    '--directory',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=Path.cwd(),
-    help='Working directory (default: current directory)',
-)
-def types_add(doc_type: str, sqid: str, directory: Path) -> None:
+@click.pass_context
+async def types_add(ctx: click.Context, doc_type: str, sqid: str) -> None:
     """Add a new document type to a node.
 
     Creates a new empty file with the specified document type.
@@ -794,12 +668,8 @@ def types_add(doc_type: str, sqid: str, directory: Path) -> None:
         # Strip @ prefix if provided
         sqid_clean = sqid.lstrip('@')
 
-        # Create adapter
-        filesystem = FileSystemAdapter()
-
-        # Execute use case
-        use_case = ManageTypesUseCase(filesystem=filesystem)
-        use_case.add_type(sqid=sqid_clean, doc_type=doc_type, directory=directory)
+        commander = LinemarkCommander(directory=ctx.obj['directory'])
+        await commander.add_type(doc_type=doc_type, sqid=sqid_clean)
 
         # Output success message
         click.echo(f'Added type "{doc_type}" to node @{sqid_clean}')
@@ -812,13 +682,8 @@ def types_add(doc_type: str, sqid: str, directory: Path) -> None:
 @types.command('remove')
 @click.argument('doc_type')
 @click.argument('sqid')
-@click.option(
-    '--directory',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=Path.cwd(),
-    help='Working directory (default: current directory)',
-)
-def types_remove(doc_type: str, sqid: str, directory: Path) -> None:
+@click.pass_context
+async def types_remove(ctx: click.Context, doc_type: str, sqid: str) -> None:
     """Remove a document type from a node.
 
     Deletes the file for the specified document type.
@@ -835,12 +700,8 @@ def types_remove(doc_type: str, sqid: str, directory: Path) -> None:
         # Strip @ prefix if provided
         sqid_clean = sqid.lstrip('@')
 
-        # Create adapter
-        filesystem = FileSystemAdapter()
-
-        # Execute use case
-        use_case = ManageTypesUseCase(filesystem=filesystem)
-        use_case.remove_type(sqid=sqid_clean, doc_type=doc_type, directory=directory)
+        commander = LinemarkCommander(directory=ctx.obj['directory'])
+        await commander.remove_type(doc_type=doc_type, sqid=sqid_clean)
 
         # Output success message
         click.echo(f'Removed type "{doc_type}" from node @{sqid_clean}')
@@ -853,13 +714,8 @@ def types_remove(doc_type: str, sqid: str, directory: Path) -> None:
 @types.command('read')
 @click.argument('doctype')
 @click.argument('sqid')
-@click.option(
-    '--directory',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=Path.cwd(),
-    help='Working directory (default: current directory)',
-)
-def types_read(doctype: str, sqid: str, directory: Path) -> None:
+@click.pass_context
+async def types_read(ctx: click.Context, doctype: str, sqid: str) -> None:
     """Read the body content of a document type.
 
     Read the body of the file for the specified document type.
@@ -876,16 +732,8 @@ def types_read(doctype: str, sqid: str, directory: Path) -> None:
         # Strip @ prefix if provided
         sqid_clean = sqid.lstrip('@')
 
-        # Create adapter
-        read_adapter = ReadTypeAdapter()
-
-        # Execute use case
-        use_case = ReadTypeUseCase(read_type_port=read_adapter)
-        body = use_case.execute(
-            sqid=sqid_clean,
-            doctype=doctype,
-            directory=directory,
-        )
+        commander = LinemarkCommander(directory=ctx.obj['directory'])
+        body = await commander.read_type(doctype=doctype, sqid=sqid_clean)
 
         # Output body to stdout
         click.echo(body)
@@ -904,13 +752,8 @@ def types_read(doctype: str, sqid: str, directory: Path) -> None:
 @types.command('write')
 @click.argument('doctype')
 @click.argument('sqid')
-@click.option(
-    '--directory',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=Path.cwd(),
-    help='Working directory (default: current directory)',
-)
-def types_write(doctype: str, sqid: str, directory: Path) -> None:
+@click.pass_context
+async def types_write(ctx: click.Context, doctype: str, sqid: str) -> None:
     """Write body content to a document type from stdin.
 
     Write the body content from stdin to the specified document type file,
@@ -936,17 +779,8 @@ def types_write(doctype: str, sqid: str, directory: Path) -> None:
         # Read body content from stdin
         body = sys.stdin.read()
 
-        # Create adapter
-        write_adapter = WriteTypeAdapter()
-
-        # Execute use case
-        use_case = WriteTypeUseCase(write_type_port=write_adapter)
-        use_case.execute(
-            sqid=sqid_clean,
-            doctype=doctype,
-            body=body,
-            directory=directory,
-        )
+        commander = LinemarkCommander(directory=ctx.obj['directory'])
+        await commander.write_type(doctype=doctype, sqid=sqid_clean, body=body)
 
     except NodeNotFoundError as e:
         click.echo(f'Error: {e}', err=True)

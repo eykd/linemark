@@ -42,7 +42,7 @@ class ValidateOutlineUseCase:
         """
         self.filesystem = filesystem
 
-    def execute(self, directory: Path, repair: bool = False) -> ValidationResult:  # noqa: FBT001, FBT002
+    async def execute(self, directory: Path, repair: bool = False) -> ValidationResult:  # noqa: FBT001, FBT002
         """Validate outline and optionally repair issues.
 
         Args:
@@ -54,7 +54,7 @@ class ValidateOutlineUseCase:
 
         """
         # Build outline from filesystem (also detects filesystem-level issues)
-        outline, fs_violations = self._build_outline(directory)
+        outline, fs_violations = await self._build_outline(directory)
 
         # Validate invariants
         violations = fs_violations + outline.validate_invariants()
@@ -64,14 +64,14 @@ class ValidateOutlineUseCase:
 
         # If repair requested, fix common issues
         if repair and violations:
-            repaired = self._repair_issues(outline, directory)
+            repaired = await self._repair_issues(outline, directory)
 
             # Re-validate after repairs
             violations = outline.validate_invariants()
 
         return ValidationResult(valid=len(violations) == 0, violations=violations, repaired=repaired)
 
-    def _build_outline(self, directory: Path) -> tuple[Outline, list[str]]:  # noqa: PLR0914, C901, PLR0912
+    async def _build_outline(self, directory: Path) -> tuple[Outline, list[str]]:  # noqa: PLR0914, C901, PLR0912
         """Build Outline from filesystem.
 
         Args:
@@ -83,7 +83,7 @@ class ValidateOutlineUseCase:
         """
         from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
 
-        all_files = self.filesystem.list_markdown_files(directory)
+        all_files = await self.filesystem.list_markdown_files(directory)
         nodes: dict[str, Node] = {}
         fs_violations: list[str] = []
 
@@ -115,8 +115,8 @@ class ValidateOutlineUseCase:
 
             # Read title from draft file
             draft_path = directory / f'{mp_str}_{sqid_str}_draft_{slug}.md'
-            if self.filesystem.file_exists(draft_path):
-                content = self.filesystem.read_file(draft_path)
+            if await self.filesystem.file_exists(draft_path):
+                content = await self.filesystem.read_file(draft_path)
                 parts = content.split('---')
                 if len(parts) >= 3:
                     frontmatter = yaml.safe_load(parts[1])
@@ -162,7 +162,7 @@ class ValidateOutlineUseCase:
 
         return Outline(nodes=nodes), fs_violations
 
-    def _repair_issues(self, outline: Outline, directory: Path) -> list[str]:
+    async def _repair_issues(self, outline: Outline, directory: Path) -> list[str]:
         """Repair common outline issues.
 
         Args:
@@ -185,11 +185,11 @@ class ValidateOutlineUseCase:
                 filename = node.filename(doc_type)
                 filepath = directory / filename
 
-                if not self.filesystem.file_exists(filepath):  # pragma: no branch
+                if not await self.filesystem.file_exists(filepath):  # pragma: no branch
                     # Create empty content (draft gets frontmatter, notes is empty)
                     content = f'---\ntitle: {node.title}\n---\n' if doc_type == 'draft' else ''
 
-                    self.filesystem.write_file(filepath, content)
+                    await self.filesystem.write_file(filepath, content)
                     node.document_types.add(doc_type)
                     repaired.append(f'Created missing {doc_type} file for node @{node.sqid.value}')
 

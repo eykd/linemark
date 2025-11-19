@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import pytest
 from click.testing import CliRunner
 
-from linemark.cli.main import lmk
+from tests.conftest import invoke_asyncclick_command
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -56,11 +56,11 @@ title: Chapter Two
 
 def test_list_command_with_sqid_filters_to_subtree(test_outline: Path) -> None:
     """Test lmk list @<sqid> filters to subtree."""
-    runner = CliRunner()
-    result = runner.invoke(lmk, ['list', '@sqid2', '--directory', str(test_outline)])
+    CliRunner()
+    exit_code, stdout, _stderr = invoke_asyncclick_command(['lmk', '--directory', str(test_outline), 'list', '@sqid2'])
 
-    assert result.exit_code == 0
-    output = result.output
+    assert exit_code == 0
+    output = stdout
 
     # Should contain subtree root and its descendant
     assert 'Section One (@sqid2)' in output
@@ -74,20 +74,21 @@ def test_list_command_with_sqid_filters_to_subtree(test_outline: Path) -> None:
 
 def test_list_command_with_invalid_sqid_shows_error(test_outline: Path) -> None:
     """Test lmk list @<invalid> shows error message."""
-    runner = CliRunner()
-    result = runner.invoke(lmk, ['list', '@invalid', '--directory', str(test_outline)])
+    CliRunner()
+    exit_code, stdout, stderr = invoke_asyncclick_command(['lmk', '--directory', str(test_outline), 'list', '@invalid'])
 
-    assert result.exit_code == 1
-    assert 'Error: SQID invalid not found in outline' in result.output
+    assert exit_code == 1
+    output = stdout + stderr
+    assert 'Error: SQID invalid not found in outline' in output
 
 
 def test_list_command_without_args_returns_full_outline(test_outline: Path) -> None:
     """Test backward compatibility: lmk list without args returns full outline."""
-    runner = CliRunner()
-    result = runner.invoke(lmk, ['list', '--directory', str(test_outline)])
+    CliRunner()
+    exit_code, stdout, _stderr = invoke_asyncclick_command(['lmk', '--directory', str(test_outline), 'list'])
 
-    assert result.exit_code == 0
-    output = result.output
+    assert exit_code == 0
+    output = stdout
 
     # Should contain all nodes
     assert 'Chapter One (@sqid1)' in output
@@ -102,11 +103,17 @@ def test_list_command_without_args_returns_full_outline(test_outline: Path) -> N
 
 def test_list_command_with_show_doctypes(test_outline: Path) -> None:
     """Test lmk list --show-doctypes displays doctypes in tree output."""
-    runner = CliRunner()
-    result = runner.invoke(lmk, ['list', '--show-doctypes', '--directory', str(test_outline)])
+    CliRunner()
+    exit_code, stdout, _stderr = invoke_asyncclick_command([
+        'lmk',
+        '--directory',
+        str(test_outline),
+        'list',
+        '--show-doctypes',
+    ])
 
-    assert result.exit_code == 0
-    output = result.output
+    assert exit_code == 0
+    output = stdout
 
     # Should contain nodes
     assert 'Chapter One (@sqid1)' in output
@@ -119,11 +126,18 @@ def test_list_command_with_show_doctypes_json(test_outline: Path) -> None:
     """Test lmk list --show-doctypes --json includes doctypes field."""
     import json
 
-    runner = CliRunner()
-    result = runner.invoke(lmk, ['list', '--show-doctypes', '--json', '--directory', str(test_outline)])
+    CliRunner()
+    exit_code, stdout, _stderr = invoke_asyncclick_command([
+        'lmk',
+        '--directory',
+        str(test_outline),
+        'list',
+        '--show-doctypes',
+        '--json',
+    ])
 
-    assert result.exit_code == 0
-    data = json.loads(result.output)
+    assert exit_code == 0
+    data = json.loads(stdout)
 
     # Check that doctypes field is present
     root_node = data[0]
@@ -133,11 +147,18 @@ def test_list_command_with_show_doctypes_json(test_outline: Path) -> None:
 
 def test_list_command_with_sqid_and_show_doctypes(test_outline: Path) -> None:
     """Test combining SQID filtering with --show-doctypes."""
-    runner = CliRunner()
-    result = runner.invoke(lmk, ['list', '@sqid2', '--show-doctypes', '--directory', str(test_outline)])
+    CliRunner()
+    exit_code, stdout, _stderr = invoke_asyncclick_command([
+        'lmk',
+        '--directory',
+        str(test_outline),
+        'list',
+        '@sqid2',
+        '--show-doctypes',
+    ])
 
-    assert result.exit_code == 0
-    output = result.output
+    assert exit_code == 0
+    output = stdout
 
     # Should show subtree
     assert 'Section One (@sqid2)' in output
@@ -155,11 +176,17 @@ def test_list_command_with_sqid_and_show_doctypes(test_outline: Path) -> None:
 
 def test_list_command_with_show_files(test_outline: Path) -> None:
     """Test lmk list --show-files displays file paths in tree output."""
-    runner = CliRunner()
-    result = runner.invoke(lmk, ['list', '--show-files', '--directory', str(test_outline)])
+    CliRunner()
+    exit_code, stdout, _stderr = invoke_asyncclick_command([
+        'lmk',
+        '--directory',
+        str(test_outline),
+        'list',
+        '--show-files',
+    ])
 
-    assert result.exit_code == 0
-    output = result.output
+    assert exit_code == 0
+    output = stdout
 
     # Should contain nodes
     assert 'Chapter One (@sqid1)' in output
@@ -174,11 +201,18 @@ def test_list_command_with_show_files_json(test_outline: Path) -> None:
     """Test lmk list --show-files --json includes files field."""
     import json
 
-    runner = CliRunner()
-    result = runner.invoke(lmk, ['list', '--show-files', '--json', '--directory', str(test_outline)])
+    CliRunner()
+    exit_code, stdout, _stderr = invoke_asyncclick_command([
+        'lmk',
+        '--directory',
+        str(test_outline),
+        'list',
+        '--show-files',
+        '--json',
+    ])
 
-    assert result.exit_code == 0
-    data = json.loads(result.output)
+    assert exit_code == 0
+    data = json.loads(stdout)
 
     # Check that files field is present
     root_node = data[0]
@@ -191,11 +225,18 @@ def test_list_command_with_show_files_json(test_outline: Path) -> None:
 
 def test_list_command_with_sqid_and_show_files(test_outline: Path) -> None:
     """Test combining SQID filtering with --show-files."""
-    runner = CliRunner()
-    result = runner.invoke(lmk, ['list', '@sqid2', '--show-files', '--directory', str(test_outline)])
+    CliRunner()
+    exit_code, stdout, _stderr = invoke_asyncclick_command([
+        'lmk',
+        '--directory',
+        str(test_outline),
+        'list',
+        '@sqid2',
+        '--show-files',
+    ])
 
-    assert result.exit_code == 0
-    output = result.output
+    assert exit_code == 0
+    output = stdout
 
     # Should show subtree
     assert 'Section One (@sqid2)' in output
@@ -214,11 +255,19 @@ def test_list_command_with_sqid_and_show_files(test_outline: Path) -> None:
 
 def test_list_command_with_all_flags_tree(test_outline: Path) -> None:
     """Test lmk list with @SQID, --show-doctypes, and --show-files in tree output."""
-    runner = CliRunner()
-    result = runner.invoke(lmk, ['list', '@sqid2', '--show-doctypes', '--show-files', '--directory', str(test_outline)])
+    CliRunner()
+    exit_code, stdout, _stderr = invoke_asyncclick_command([
+        'lmk',
+        '--directory',
+        str(test_outline),
+        'list',
+        '@sqid2',
+        '--show-doctypes',
+        '--show-files',
+    ])
 
-    assert result.exit_code == 0
-    output = result.output
+    assert exit_code == 0
+    output = stdout
 
     # Should show subtree nodes
     assert 'Section One (@sqid2)' in output
@@ -239,13 +288,20 @@ def test_list_command_with_all_flags_json(test_outline: Path) -> None:
     """Test lmk list with @SQID, --show-doctypes, --show-files, and --json."""
     import json
 
-    runner = CliRunner()
-    result = runner.invoke(
-        lmk, ['list', '@sqid2', '--show-doctypes', '--show-files', '--json', '--directory', str(test_outline)]
-    )
+    CliRunner()
+    exit_code, stdout, _stderr = invoke_asyncclick_command([
+        'lmk',
+        '--directory',
+        str(test_outline),
+        'list',
+        '@sqid2',
+        '--show-doctypes',
+        '--show-files',
+        '--json',
+    ])
 
-    assert result.exit_code == 0
-    data = json.loads(result.output)
+    assert exit_code == 0
+    data = json.loads(stdout)
 
     # Should contain subtree root
     assert len(data) == 1
@@ -264,11 +320,18 @@ def test_list_command_with_all_flags_json(test_outline: Path) -> None:
 
 def test_list_command_metadata_order_tree(test_outline: Path) -> None:
     """Test that metadata appears in correct order: doctypes first, then files."""
-    runner = CliRunner()
-    result = runner.invoke(lmk, ['list', '--show-doctypes', '--show-files', '--directory', str(test_outline)])
+    CliRunner()
+    exit_code, stdout, _stderr = invoke_asyncclick_command([
+        'lmk',
+        '--directory',
+        str(test_outline),
+        'list',
+        '--show-doctypes',
+        '--show-files',
+    ])
 
-    assert result.exit_code == 0
-    output = result.output
+    assert exit_code == 0
+    output = stdout
 
     # Find position of doctypes and files metadata
     doctypes_pos = output.find('doctypes:')
@@ -284,11 +347,11 @@ def test_list_command_metadata_order_tree(test_outline: Path) -> None:
 
 def test_list_command_backward_compat_no_flags(test_outline: Path) -> None:
     """Test backward compatibility: lmk list without any flags."""
-    runner = CliRunner()
-    result = runner.invoke(lmk, ['list', '--directory', str(test_outline)])
+    CliRunner()
+    exit_code, stdout, _stderr = invoke_asyncclick_command(['lmk', '--directory', str(test_outline), 'list'])
 
-    assert result.exit_code == 0
-    output = result.output
+    assert exit_code == 0
+    output = stdout
 
     # Should show all nodes
     assert 'Chapter One (@sqid1)' in output

@@ -60,7 +60,7 @@ class ListOutlineUseCase:
 
         return 'Untitled'  # pragma: no cover
 
-    def execute(self, directory: Path, root_sqid: str | None = None) -> list[Node]:
+    async def execute(self, directory: Path, root_sqid: str | None = None) -> list[Node]:
         """Execute the list outline use case.
 
         Args:
@@ -77,7 +77,7 @@ class ListOutlineUseCase:
         nodes_by_sqid: dict[str, Node] = {}
 
         # List all markdown files
-        md_files = self.filesystem.list_markdown_files(directory)
+        md_files = await self.filesystem.list_markdown_files(directory)
 
         # Parse each file
         for file_path in md_files:
@@ -94,7 +94,7 @@ class ListOutlineUseCase:
             if sqid_str not in nodes_by_sqid:
                 # Read title from draft file
                 if doc_type == 'draft':
-                    content = self.filesystem.read_file(file_path)
+                    content = await self.filesystem.read_file(file_path)
                     title = self._extract_title_from_frontmatter(content)
                 else:  # pragma: no cover
                     # Skip non-draft files if node doesn't exist yet

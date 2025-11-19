@@ -6,7 +6,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from linemark.cli.main import lmk
+from tests.conftest import invoke_asyncclick_command
 
 
 def test_compact_root_level_with_irregular_spacing(tmp_path: Path) -> None:
@@ -15,22 +15,46 @@ def test_compact_root_level_with_irregular_spacing(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Create 4 nodes with irregular spacing: 001, 003, 007, 099
-        result1 = runner.invoke(lmk, ['add', 'Node One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
+        exit_code1, _stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Node One',
+        ])
+        assert exit_code1 == 0
 
-        result2 = runner.invoke(lmk, ['add', 'Node Two', '--directory', str(isolated_dir)])
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Node Two',
+        ])
+        assert exit_code2 == 0
 
-        result3 = runner.invoke(lmk, ['add', 'Node Three', '--directory', str(isolated_dir)])
-        assert result3.exit_code == 0
+        exit_code3, _stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Node Three',
+        ])
+        assert exit_code3 == 0
 
-        result4 = runner.invoke(lmk, ['add', 'Node Four', '--directory', str(isolated_dir)])
-        assert result4.exit_code == 0
+        exit_code4, _stdout4, _stderr4 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Node Four',
+        ])
+        assert exit_code4 == 0
 
         # Compact root level
-        result5 = runner.invoke(lmk, ['compact', '--directory', str(isolated_dir)])
-        assert result5.exit_code == 0
-        assert 'Compacted 4 root-level nodes' in result5.output
+        exit_code5, stdout5, _stderr5 = invoke_asyncclick_command(['lmk', '--directory', str(isolated_dir), 'compact'])
+        assert exit_code5 == 0
+        assert 'Compacted 4 root-level nodes' in stdout5
 
         # Verify new spacing uses 100s tier
         cwd = Path.cwd()
@@ -54,30 +78,60 @@ def test_compact_specific_subtree(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Create parent
-        result1 = runner.invoke(lmk, ['add', 'Parent', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        parent_sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Parent',
+        ])
+        assert exit_code1 == 0
+        parent_sqid = stdout1.split('@')[1].split(')')[0]
 
         # Add 3 children
-        result2 = runner.invoke(
-            lmk, ['add', 'Child One', '--child-of', f'@{parent_sqid}', '--directory', str(isolated_dir)]
-        )
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Child One',
+            '--child-of',
+            f'@{parent_sqid}',
+        ])
+        assert exit_code2 == 0
 
-        result3 = runner.invoke(
-            lmk, ['add', 'Child Two', '--child-of', f'@{parent_sqid}', '--directory', str(isolated_dir)]
-        )
-        assert result3.exit_code == 0
+        exit_code3, _stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Child Two',
+            '--child-of',
+            f'@{parent_sqid}',
+        ])
+        assert exit_code3 == 0
 
-        result4 = runner.invoke(
-            lmk, ['add', 'Child Three', '--child-of', f'@{parent_sqid}', '--directory', str(isolated_dir)]
-        )
-        assert result4.exit_code == 0
+        exit_code4, _stdout4, _stderr4 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Child Three',
+            '--child-of',
+            f'@{parent_sqid}',
+        ])
+        assert exit_code4 == 0
 
         # Compact children of parent
-        result5 = runner.invoke(lmk, ['compact', f'@{parent_sqid}', '--directory', str(isolated_dir)])
-        assert result5.exit_code == 0
-        assert f'Compacted 3 children of @{parent_sqid}' in result5.output
+        exit_code5, stdout5, _stderr5 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'compact',
+            f'@{parent_sqid}',
+        ])
+        assert exit_code5 == 0
+        assert f'Compacted 3 children of @{parent_sqid}' in stdout5
 
         # Verify children now use even spacing (100, 200, 300)
         cwd = Path.cwd()
@@ -96,28 +150,46 @@ def test_compact_preserves_hierarchy(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Create parent with children
-        result1 = runner.invoke(lmk, ['add', 'Parent', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        parent_sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Parent',
+        ])
+        assert exit_code1 == 0
+        parent_sqid = stdout1.split('@')[1].split(')')[0]
 
-        result2 = runner.invoke(
-            lmk, ['add', 'Child', '--child-of', f'@{parent_sqid}', '--directory', str(isolated_dir)]
-        )
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Child',
+            '--child-of',
+            f'@{parent_sqid}',
+        ])
+        assert exit_code2 == 0
 
         # Add another root node
-        result3 = runner.invoke(lmk, ['add', 'Root Two', '--directory', str(isolated_dir)])
-        assert result3.exit_code == 0
+        exit_code3, _stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Root Two',
+        ])
+        assert exit_code3 == 0
 
         # Compact root level
-        result4 = runner.invoke(lmk, ['compact', '--directory', str(isolated_dir)])
-        assert result4.exit_code == 0
+        exit_code4, _stdout4, _stderr4 = invoke_asyncclick_command(['lmk', '--directory', str(isolated_dir), 'compact'])
+        assert exit_code4 == 0
 
         # Verify hierarchy intact via list
-        result5 = runner.invoke(lmk, ['list', '--directory', str(isolated_dir)])
-        assert 'Parent' in result5.output
-        assert 'Child' in result5.output
-        assert 'Root Two' in result5.output
+        _exit_code5, stdout5, _stderr5 = invoke_asyncclick_command(['lmk', '--directory', str(isolated_dir), 'list'])
+        assert 'Parent' in stdout5
+        assert 'Child' in stdout5
+        assert 'Root Two' in stdout5
 
 
 def test_compact_with_many_siblings_uses_smaller_tier(tmp_path: Path) -> None:
@@ -127,13 +199,24 @@ def test_compact_with_many_siblings_uses_smaller_tier(tmp_path: Path) -> None:
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Create 12 root nodes to trigger 10s tier
         for i in range(1, 13):
-            result = runner.invoke(lmk, ['add', f'Node {i}', '--directory', str(isolated_dir)])
-            assert result.exit_code == 0
+            exit_code, _stdout, _stderr = invoke_asyncclick_command([
+                'lmk',
+                '--directory',
+                str(isolated_dir),
+                'add',
+                f'Node {i}',
+            ])
+            assert exit_code == 0
 
         # Compact root level
-        result_compact = runner.invoke(lmk, ['compact', '--directory', str(isolated_dir)])
-        assert result_compact.exit_code == 0
-        assert 'Compacted 12 root-level nodes' in result_compact.output
+        exit_code_compact, stdout_compact, _stderr_compact = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'compact',
+        ])
+        assert exit_code_compact == 0
+        assert 'Compacted 12 root-level nodes' in stdout_compact
 
         # Verify uses 10s tier: 010, 020, 030, ..., 120
         cwd = Path.cwd()
@@ -151,12 +234,24 @@ def test_compact_preserves_content(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Create nodes
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        sqid1 = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
+        sqid1 = stdout1.split('@')[1].split(')')[0]
 
-        result2 = runner.invoke(lmk, ['add', 'Chapter Two', '--directory', str(isolated_dir)])
-        assert result2.exit_code == 0
+        exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter Two',
+        ])
+        assert exit_code2 == 0
 
         # Write content to first chapter
         cwd = Path.cwd()
@@ -169,8 +264,8 @@ def test_compact_preserves_content(tmp_path: Path) -> None:
         assert 'Chapter One' in original_content
 
         # Compact
-        result3 = runner.invoke(lmk, ['compact', '--directory', str(isolated_dir)])
-        assert result3.exit_code == 0
+        exit_code3, _stdout3, _stderr3 = invoke_asyncclick_command(['lmk', '--directory', str(isolated_dir), 'compact'])
+        assert exit_code3 == 0
 
         # Find renamed file and verify content
         new_draft_files = list(cwd.glob(f'*{sqid1}_draft*.md'))
@@ -186,9 +281,15 @@ def test_compact_nonexistent_node_fails(tmp_path: Path) -> None:
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
-        result = runner.invoke(lmk, ['compact', '@NONEXISTENT', '--directory', str(isolated_dir)])
-        assert result.exit_code != 0
-        assert 'not found' in result.output
+        exit_code, stdout, stderr = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'compact',
+            '@NONEXISTENT',
+        ])
+        assert exit_code != 0
+        assert 'not found' in stdout or 'not found' in stderr
 
 
 def test_compact_with_deep_hierarchy(tmp_path: Path) -> None:
@@ -197,31 +298,55 @@ def test_compact_with_deep_hierarchy(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Create parent
-        result1 = runner.invoke(lmk, ['add', 'Parent', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
-        parent_sqid = result1.output.split('@')[1].split(')')[0]
+        exit_code1, stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Parent',
+        ])
+        assert exit_code1 == 0
+        parent_sqid = stdout1.split('@')[1].split(')')[0]
 
         # Add child
-        result2 = runner.invoke(
-            lmk, ['add', 'Child', '--child-of', f'@{parent_sqid}', '--directory', str(isolated_dir)]
-        )
-        assert result2.exit_code == 0
-        child_sqid = result2.output.split('@')[1].split(')')[0]
+        exit_code2, stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Child',
+            '--child-of',
+            f'@{parent_sqid}',
+        ])
+        assert exit_code2 == 0
+        child_sqid = stdout2.split('@')[1].split(')')[0]
 
         # Add grandchild
-        result3 = runner.invoke(
-            lmk, ['add', 'Grandchild', '--child-of', f'@{child_sqid}', '--directory', str(isolated_dir)]
-        )
-        assert result3.exit_code == 0
-        grandchild_sqid = result3.output.split('@')[1].split(')')[0]
+        exit_code3, stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Grandchild',
+            '--child-of',
+            f'@{child_sqid}',
+        ])
+        assert exit_code3 == 0
+        grandchild_sqid = stdout3.split('@')[1].split(')')[0]
 
         # Add another root to trigger compaction
-        result4 = runner.invoke(lmk, ['add', 'Root Two', '--directory', str(isolated_dir)])
-        assert result4.exit_code == 0
+        exit_code4, _stdout4, _stderr4 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Root Two',
+        ])
+        assert exit_code4 == 0
 
         # Compact root level
-        result5 = runner.invoke(lmk, ['compact', '--directory', str(isolated_dir)])
-        assert result5.exit_code == 0
+        exit_code5, _stdout5, _stderr5 = invoke_asyncclick_command(['lmk', '--directory', str(isolated_dir), 'compact'])
+        assert exit_code5 == 0
 
         # Verify grandchild file updated with new path prefix
         cwd = Path.cwd()

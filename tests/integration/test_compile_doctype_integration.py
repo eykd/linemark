@@ -7,7 +7,7 @@ from typing import Any
 
 from click.testing import CliRunner
 
-from linemark.cli.main import lmk
+from tests.conftest import invoke_asyncclick_command
 
 
 def flatten_nodes(nodes: list[Any]) -> list[dict[str, Any]]:
@@ -29,18 +29,44 @@ def test_compile_multiple_nodes(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add several nodes
-        runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
+        _exit_code_add1, _stdout_add1, _stderr_add1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
 
         # Extract SQID from first node to add a child
-        result_list = runner.invoke(lmk, ['list', '--json', '--directory', str(isolated_dir)])
+        _exit_code_list, stdout_list, _stderr_list = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'list',
+            '--json',
+        ])
         import json
 
-        nodes_tree = json.loads(result_list.output)
+        nodes_tree = json.loads(stdout_list)
         nodes = flatten_nodes(nodes_tree)
         first_sqid = nodes[0]['sqid']
 
-        runner.invoke(lmk, ['add', 'Section 1.1', '--child-of', first_sqid, '--directory', str(isolated_dir)])
-        runner.invoke(lmk, ['add', 'Chapter Two', '--directory', str(isolated_dir)])
+        _exit_code_add2, _stdout_add2, _stderr_add2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Section 1.1',
+            '--child-of',
+            first_sqid,
+        ])
+        _exit_code_add3, _stdout_add3, _stderr_add3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter Two',
+        ])
 
         # Add content to draft files by title
         cwd = Path.cwd()
@@ -57,15 +83,21 @@ def test_compile_multiple_nodes(tmp_path: Path) -> None:
                 draft_file.write_text(content + '\n\nChapter Two content')
 
         # Compile all drafts
-        result = runner.invoke(lmk, ['compile', 'draft', '--directory', str(isolated_dir)])
+        exit_code, stdout, _stderr = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'compile',
+            'draft',
+        ])
 
-        assert result.exit_code == 0
-        assert 'Chapter One content' in result.output
-        assert 'Section 1.1 content' in result.output
-        assert 'Chapter Two content' in result.output
+        assert exit_code == 0
+        assert 'Chapter One content' in stdout
+        assert 'Section 1.1 content' in stdout
+        assert 'Chapter Two content' in stdout
         # Should be in depth-first order: Chapter One, Section 1.1, Chapter Two
-        assert result.output.index('Chapter One content') < result.output.index('Section 1.1 content')
-        assert result.output.index('Section 1.1 content') < result.output.index('Chapter Two content')
+        assert stdout.index('Chapter One content') < stdout.index('Section 1.1 content')
+        assert stdout.index('Section 1.1 content') < stdout.index('Chapter Two content')
 
 
 def test_compile_skips_empty_files(tmp_path: Path) -> None:
@@ -74,9 +106,27 @@ def test_compile_skips_empty_files(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add three nodes
-        runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        runner.invoke(lmk, ['add', 'Chapter Two', '--directory', str(isolated_dir)])
-        runner.invoke(lmk, ['add', 'Chapter Three', '--directory', str(isolated_dir)])
+        _exit_code1, _stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        _exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter Two',
+        ])
+        _exit_code3, _stdout3, _stderr3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter Three',
+        ])
 
         # Add content only to first and third nodes
         cwd = Path.cwd()
@@ -93,13 +143,19 @@ def test_compile_skips_empty_files(tmp_path: Path) -> None:
         draft_files[2].write_text(content3 + '\n\nThird chapter content')
 
         # Compile
-        result = runner.invoke(lmk, ['compile', 'draft', '--directory', str(isolated_dir)])
+        exit_code, stdout, _stderr = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'compile',
+            'draft',
+        ])
 
-        assert result.exit_code == 0
-        assert 'First chapter content' in result.output
-        assert 'Third chapter content' in result.output
+        assert exit_code == 0
+        assert 'First chapter content' in stdout
+        assert 'Third chapter content' in stdout
         # Should only have one separator (between the two non-empty files)
-        assert result.output.count('\n\n---\n\n') == 1
+        assert stdout.count('\n\n---\n\n') == 1
 
 
 def test_compile_doctype_not_found_error(tmp_path: Path) -> None:
@@ -108,15 +164,28 @@ def test_compile_doctype_not_found_error(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add a node (only has draft and notes by default)
-        runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
+        _exit_code1, _stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
 
         # Try to compile a non-existent doctype
-        result = runner.invoke(lmk, ['compile', 'summary', '--directory', str(isolated_dir)])
+        exit_code, stdout, stderr = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'compile',
+            'summary',
+        ])
 
-        assert result.exit_code == 1
-        assert 'Error:' in result.output
-        assert 'summary' in result.output
-        assert 'not found' in result.output.lower()
+        assert exit_code == 1
+        output = stdout + stderr
+        assert 'Error:' in output
+        assert 'summary' in output
+        assert 'not found' in output.lower()
 
 
 def test_compile_empty_result_handling(tmp_path: Path) -> None:
@@ -125,15 +194,33 @@ def test_compile_empty_result_handling(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add nodes but don't add any content
-        runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        runner.invoke(lmk, ['add', 'Chapter Two', '--directory', str(isolated_dir)])
+        _exit_code1, _stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        _exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter Two',
+        ])
 
         # Compile (all draft files have only frontmatter, no actual content)
-        result = runner.invoke(lmk, ['compile', 'draft', '--directory', str(isolated_dir)])
+        exit_code, stdout, _stderr = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'compile',
+            'draft',
+        ])
 
         # Should succeed with empty output
-        assert result.exit_code == 0
-        assert result.output.strip() == ''
+        assert exit_code == 0
+        assert stdout.strip() == ''
 
 
 # =============================================================================
@@ -147,27 +234,67 @@ def test_subtree_compilation_with_children(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add parent and children
-        result1 = runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        assert result1.exit_code == 0
+        exit_code1, _stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        assert exit_code1 == 0
 
         # Extract SQID
-        result_list = runner.invoke(lmk, ['list', '--json', '--directory', str(isolated_dir)])
+        _exit_code_list, stdout_list, _stderr_list = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'list',
+            '--json',
+        ])
         import json
 
-        nodes = flatten_nodes(json.loads(result_list.output))
+        nodes = flatten_nodes(json.loads(stdout_list))
         chapter_one_sqid = nodes[0]['sqid']
 
         # Add child and grandchild
-        runner.invoke(lmk, ['add', 'Section 1.1', '--child-of', chapter_one_sqid, '--directory', str(isolated_dir)])
-        result_list2 = runner.invoke(lmk, ['list', '--json', '--directory', str(isolated_dir)])
-        nodes2 = flatten_nodes(json.loads(result_list2.output))
+        _exit_code_add2, _stdout_add2, _stderr_add2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Section 1.1',
+            '--child-of',
+            chapter_one_sqid,
+        ])
+        _exit_code_list2, stdout_list2, _stderr_list2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'list',
+            '--json',
+        ])
+        nodes2 = flatten_nodes(json.loads(stdout_list2))
         # Find Section 1.1 by title
         section_sqid = next(n['sqid'] for n in nodes2 if n['title'] == 'Section 1.1')
 
-        runner.invoke(lmk, ['add', 'Subsection 1.1.1', '--child-of', section_sqid, '--directory', str(isolated_dir)])
+        _exit_code_add3, _stdout_add3, _stderr_add3 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Subsection 1.1.1',
+            '--child-of',
+            section_sqid,
+        ])
 
         # Add another root node
-        runner.invoke(lmk, ['add', 'Chapter Two', '--directory', str(isolated_dir)])
+        _exit_code_add4, _stdout_add4, _stderr_add4 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter Two',
+        ])
 
         # Add content to files
         cwd = Path.cwd()
@@ -183,14 +310,21 @@ def test_subtree_compilation_with_children(tmp_path: Path) -> None:
                 draft_file.write_text(content + '\n\nChapter Two content')
 
         # Compile only Section 1.1 subtree
-        result = runner.invoke(lmk, ['compile', 'draft', section_sqid, '--directory', str(isolated_dir)])
+        exit_code, stdout, _stderr = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'compile',
+            'draft',
+            section_sqid,
+        ])
 
-        assert result.exit_code == 0
-        assert 'Section 1.1 content' in result.output
-        assert 'Subsection content' in result.output
+        assert exit_code == 0
+        assert 'Section 1.1 content' in stdout
+        assert 'Subsection content' in stdout
         # Should NOT include parent or other branches
-        assert 'Chapter One content' not in result.output
-        assert 'Chapter Two content' not in result.output
+        assert 'Chapter One content' not in stdout
+        assert 'Chapter Two content' not in stdout
 
 
 def test_leaf_node_subtree_compilation(tmp_path: Path) -> None:
@@ -199,14 +333,32 @@ def test_leaf_node_subtree_compilation(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add multiple nodes
-        runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
-        runner.invoke(lmk, ['add', 'Chapter Two', '--directory', str(isolated_dir)])
+        _exit_code1, _stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
+        _exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter Two',
+        ])
 
         # Get SQID of Chapter Two
-        result_list = runner.invoke(lmk, ['list', '--json', '--directory', str(isolated_dir)])
+        _exit_code_list, stdout_list, _stderr_list = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'list',
+            '--json',
+        ])
         import json
 
-        nodes = flatten_nodes(json.loads(result_list.output))
+        nodes = flatten_nodes(json.loads(stdout_list))
         chapter_two_sqid = next(n['sqid'] for n in nodes if n['title'] == 'Chapter Two')
 
         # Add content
@@ -219,11 +371,18 @@ def test_leaf_node_subtree_compilation(tmp_path: Path) -> None:
                 draft_file.write_text(content + '\n\nChapter Two content')
 
         # Compile leaf node subtree
-        result = runner.invoke(lmk, ['compile', 'draft', chapter_two_sqid, '--directory', str(isolated_dir)])
+        exit_code, stdout, _stderr = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'compile',
+            'draft',
+            chapter_two_sqid,
+        ])
 
-        assert result.exit_code == 0
-        assert 'Chapter Two content' in result.output
-        assert 'Chapter One content' not in result.output
+        assert exit_code == 0
+        assert 'Chapter Two content' in stdout
+        assert 'Chapter One content' not in stdout
 
 
 def test_invalid_sqid_error_integration(tmp_path: Path) -> None:
@@ -232,14 +391,28 @@ def test_invalid_sqid_error_integration(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add a node
-        runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
+        _exit_code1, _stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
 
         # Try to compile with invalid SQID
-        result = runner.invoke(lmk, ['compile', 'draft', 'INVALID123', '--directory', str(isolated_dir)])
+        exit_code, stdout, stderr = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'compile',
+            'draft',
+            'INVALID123',
+        ])
 
-        assert result.exit_code == 1
-        assert 'Error:' in result.output
-        assert 'INVALID123' in result.output
+        assert exit_code == 1
+        output = stdout + stderr
+        assert 'Error:' in output
+        assert 'INVALID123' in output
 
 
 def test_subtree_with_no_matching_doctype_integration(tmp_path: Path) -> None:
@@ -248,24 +421,52 @@ def test_subtree_with_no_matching_doctype_integration(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add parent and child
-        runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
+        _exit_code1, _stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
 
         # Get SQID
-        result_list = runner.invoke(lmk, ['list', '--json', '--directory', str(isolated_dir)])
+        _exit_code_list, stdout_list, _stderr_list = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'list',
+            '--json',
+        ])
         import json
 
-        nodes = flatten_nodes(json.loads(result_list.output))
+        nodes = flatten_nodes(json.loads(stdout_list))
         sqid = nodes[0]['sqid']
 
-        runner.invoke(lmk, ['add', 'Section 1.1', '--child-of', sqid, '--directory', str(isolated_dir)])
+        _exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Section 1.1',
+            '--child-of',
+            sqid,
+        ])
 
         # Try to compile non-existent doctype from subtree
-        result = runner.invoke(lmk, ['compile', 'summary', sqid, '--directory', str(isolated_dir)])
+        exit_code, stdout, stderr = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'compile',
+            'summary',
+            sqid,
+        ])
 
-        assert result.exit_code == 1
-        assert 'Error:' in result.output
-        assert 'summary' in result.output
-        assert 'not found' in result.output.lower()
+        assert exit_code == 1
+        output = stdout + stderr
+        assert 'Error:' in output
+        assert 'summary' in output
+        assert 'not found' in output.lower()
 
 
 def test_at_prefix_stripping_integration(tmp_path: Path) -> None:
@@ -274,13 +475,25 @@ def test_at_prefix_stripping_integration(tmp_path: Path) -> None:
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as isolated_dir:
         # Add nodes
-        runner.invoke(lmk, ['add', 'Chapter One', '--directory', str(isolated_dir)])
+        _exit_code1, _stdout1, _stderr1 = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'add',
+            'Chapter One',
+        ])
 
         # Get SQID
-        result_list = runner.invoke(lmk, ['list', '--json', '--directory', str(isolated_dir)])
+        _exit_code_list, stdout_list, _stderr_list = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'list',
+            '--json',
+        ])
         import json
 
-        nodes = flatten_nodes(json.loads(result_list.output))
+        nodes = flatten_nodes(json.loads(stdout_list))
         sqid = nodes[0]['sqid']
 
         # Add content
@@ -290,7 +503,14 @@ def test_at_prefix_stripping_integration(tmp_path: Path) -> None:
             draft_file.write_text(content + '\n\nChapter content')
 
         # Compile with @ prefix
-        result = runner.invoke(lmk, ['compile', 'draft', f'@{sqid}', '--directory', str(isolated_dir)])
+        exit_code, stdout, _stderr = invoke_asyncclick_command([
+            'lmk',
+            '--directory',
+            str(isolated_dir),
+            'compile',
+            'draft',
+            f'@{sqid}',
+        ])
 
-        assert result.exit_code == 0
-        assert 'Chapter content' in result.output
+        assert exit_code == 0
+        assert 'Chapter content' in stdout

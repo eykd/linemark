@@ -26,6 +26,8 @@ classifiers = [
 
 requires-python = ">=3.13"
 dependencies = [
+    "anyio>=4.11.0",
+    "asyncclick>=8.3.0.7",
     "claude-agent-sdk>=0.1.6",
     "click>=8.1.8",
     "click-extra[pygments]>=4.15.0",
@@ -201,6 +203,7 @@ ignore = [
     "TD003",  # https://docs.astral.sh/ruff/rules/missing-todo-link/
     "TRY003", # https://docs.astral.sh/ruff/rules/raise-vanilla-args/
     "PT012",  # https://docs.astral.sh/ruff/rules/pytest-raises-multiple-statements/ - acceptable for TDD patterns
+    "RUF001",  # https://docs.astral.sh/ruff/rules/ambiguous-unicode-character-string/
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.

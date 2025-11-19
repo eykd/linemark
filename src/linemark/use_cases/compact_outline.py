@@ -34,7 +34,7 @@ class CompactOutlineUseCase:
         """
         self.filesystem = filesystem
 
-    def execute(self, sqid: str | None, directory: Path) -> list[Node]:
+    async def execute(self, sqid: str | None, directory: Path) -> list[Node]:
         """Compact sibling spacing at specified level.
 
         Args:
@@ -49,7 +49,7 @@ class CompactOutlineUseCase:
 
         """
         # Build outline from filesystem
-        outline = self._build_outline(directory)
+        outline = await self._build_outline(directory)
 
         # Identify siblings to compact
         if sqid is None:
@@ -114,7 +114,7 @@ class CompactOutlineUseCase:
                 desc.mp = desc.mp.replace_prefix(old_mp, new_mp)
 
             # Rename files on filesystem
-            self._rename_node_files(node, old_mp, directory)
+            await self._rename_node_files(node, old_mp, directory)
 
             # Rename descendant files
             for desc in descendants:
@@ -124,11 +124,11 @@ class CompactOutlineUseCase:
                         *desc.mp.segments[len(new_mp.segments) :],
                     )
                 )
-                self._rename_node_files(desc, old_desc_mp, directory)
+                await self._rename_node_files(desc, old_desc_mp, directory)
 
         return renamed_nodes
 
-    def _build_outline(self, directory: Path) -> Outline:  # noqa: PLR0914
+    async def _build_outline(self, directory: Path) -> Outline:  # noqa: PLR0914
         """Build Outline from filesystem.
 
         Args:
@@ -140,7 +140,7 @@ class CompactOutlineUseCase:
         """
         from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
 
-        all_files = self.filesystem.list_markdown_files(directory)
+        all_files = await self.filesystem.list_markdown_files(directory)
         nodes: dict[str, Node] = {}
 
         # Track SQIDs we've seen to avoid duplicates
@@ -165,8 +165,8 @@ class CompactOutlineUseCase:
 
             # Read title from draft file
             draft_path = directory / f'{mp_str}_{sqid_str}_draft_{slug}.md'
-            if self.filesystem.file_exists(draft_path):
-                content = self.filesystem.read_file(draft_path)
+            if await self.filesystem.file_exists(draft_path):
+                content = await self.filesystem.read_file(draft_path)
                 parts = content.split('---')
                 if len(parts) >= 3:
                     frontmatter = yaml.safe_load(parts[1])
@@ -197,7 +197,7 @@ class CompactOutlineUseCase:
 
         return Outline(nodes=nodes)
 
-    def _rename_node_files(self, node: Node, old_mp: MaterializedPath, directory: Path) -> None:
+    async def _rename_node_files(self, node: Node, old_mp: MaterializedPath, directory: Path) -> None:
         """Rename all files for a node from old MP to new MP.
 
         Args:
@@ -215,7 +215,7 @@ class CompactOutlineUseCase:
             new_path = directory / new_filename
 
             # Only rename if file exists and names differ
-            if self.filesystem.file_exists(old_path) and old_filename != new_filename:
-                content = self.filesystem.read_file(old_path)
-                self.filesystem.write_file(new_path, content)
-                self.filesystem.delete_file(old_path)
+            if await self.filesystem.file_exists(old_path) and old_filename != new_filename:
+                content = await self.filesystem.read_file(old_path)
+                await self.filesystem.write_file(new_path, content)
+                await self.filesystem.delete_file(old_path)

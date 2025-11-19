@@ -34,7 +34,7 @@ class ManageTypesUseCase:
         """
         self.filesystem = filesystem
 
-    def list_types(self, sqid: str, directory: Path) -> list[str]:
+    async def list_types(self, sqid: str, directory: Path) -> list[str]:
         """List all document types for a node.
 
         Args:
@@ -46,7 +46,7 @@ class ManageTypesUseCase:
 
         """
         # Scan directory for files matching SQID
-        all_files = self.filesystem.list_markdown_files(directory)
+        all_files = await self.filesystem.list_markdown_files(directory)
         types: set[str] = set()
 
         for filepath in all_files:
@@ -56,7 +56,7 @@ class ManageTypesUseCase:
 
         return sorted(types)
 
-    def add_type(self, sqid: str, doc_type: str, directory: Path) -> None:
+    async def add_type(self, sqid: str, doc_type: str, directory: Path) -> None:
         """Add new document type to a node.
 
         Creates a new empty file with the specified document type.
@@ -72,7 +72,7 @@ class ManageTypesUseCase:
 
         """
         # Load existing types and find node metadata
-        all_files = self.filesystem.list_markdown_files(directory)
+        all_files = await self.filesystem.list_markdown_files(directory)
         node_files = []
         existing_types: set[str] = set()
 
@@ -105,9 +105,9 @@ class ManageTypesUseCase:
         # Create new file
         new_filename = f'{mp}_{sqid}_{doc_type}_{slug}.md'
         new_filepath = directory / new_filename
-        self.filesystem.write_file(new_filepath, '')
+        await self.filesystem.write_file(new_filepath, '')
 
-    def remove_type(self, sqid: str, doc_type: str, directory: Path) -> None:
+    async def remove_type(self, sqid: str, doc_type: str, directory: Path) -> None:
         """Remove document type from a node.
 
         Deletes the file for the specified document type.
@@ -128,7 +128,7 @@ class ManageTypesUseCase:
             raise ValueError(msg)
 
         # Find all files for node
-        all_files = self.filesystem.list_markdown_files(directory)
+        all_files = await self.filesystem.list_markdown_files(directory)
         node_files = []
         target_file = None
 
@@ -150,4 +150,4 @@ class ManageTypesUseCase:
             raise ValueError(msg)
 
         # Delete file
-        self.filesystem.delete_file(target_file)
+        await self.filesystem.delete_file(target_file)

@@ -67,7 +67,7 @@ class CompileDoctypeUseCase:
 
         return 'Untitled'  # pragma: no cover
 
-    def _list_nodes(self, directory: Path) -> list[Node]:
+    async def _list_nodes(self, directory: Path) -> list[Node]:
         """List all nodes in the forest.
 
         Args:
@@ -80,7 +80,7 @@ class CompileDoctypeUseCase:
         nodes_by_sqid: dict[str, Node] = {}
 
         # List all markdown files
-        md_files = self.filesystem.list_markdown_files(directory)
+        md_files = await self.filesystem.list_markdown_files(directory)
 
         # Parse each file
         for file_path in md_files:
@@ -97,7 +97,7 @@ class CompileDoctypeUseCase:
             if sqid_str not in nodes_by_sqid:
                 # For compilation, we need title from draft file
                 if doc_type == 'draft':
-                    content = self.filesystem.read_file(file_path)
+                    content = await self.filesystem.read_file(file_path)
                     title = self._extract_title_from_frontmatter(content)
                 else:
                     # Skip non-draft files if node doesn't exist yet
@@ -235,7 +235,7 @@ class CompileDoctypeUseCase:
             # If decode fails, return as-is (defensive programming)
             return separator
 
-    def execute(
+    async def execute(
         self,
         doctype: str,
         directory: Path,
@@ -260,7 +260,7 @@ class CompileDoctypeUseCase:
 
         """
         # 1. Get all nodes
-        all_nodes = self._list_nodes(directory)
+        all_nodes = await self._list_nodes(directory)
 
         # 2. Filter to subtree if SQID provided
         nodes = self._filter_subtree(all_nodes, sqid) if sqid is not None else all_nodes
@@ -284,7 +284,7 @@ class CompileDoctypeUseCase:
 
             # Read file content
             try:
-                content = self.filesystem.read_file(filepath)
+                content = await self.filesystem.read_file(filepath)
             except FileNotFoundError:  # pragma: no cover
                 # File doesn't exist - skip # pragma: no cover
                 continue  # pragma: no cover
