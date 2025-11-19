@@ -170,14 +170,16 @@ def test_search_filter_by_doctype(tmp_path: Path) -> None:
         # Write content to draft
         draft_content = 'This is in the draft with KEYWORD'
         exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command(
-            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'draft', f'@{sqid}'], stdin_content=draft_content
+            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'draft', f'@{sqid}'],
+            stdin_content=draft_content,
         )
         assert exit_code2 == 0
 
         # Write content to notes
         notes_content = 'This is in the notes with KEYWORD'
         exit_code3, _stdout3, _stderr3 = invoke_asyncclick_command(
-            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'notes', f'@{sqid}'], stdin_content=notes_content
+            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'notes', f'@{sqid}'],
+            stdin_content=notes_content,
         )
         assert exit_code3 == 0
 
@@ -381,7 +383,8 @@ def test_search_subtree_filter(tmp_path: Path) -> None:
         # Write content to child
         content = 'Child content with SUBTREETEST'
         exit_code3, _stdout3, _stderr3 = invoke_asyncclick_command(
-            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'draft', f'@{child_sqid}'], stdin_content=content
+            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'draft', f'@{child_sqid}'],
+            stdin_content=content,
         )
         assert exit_code3 == 0
 
@@ -417,14 +420,16 @@ def test_search_single_doctype_filter(tmp_path: Path) -> None:
         # Write content to draft
         draft_content = 'Draft DOCTYPE1TEST'
         exit_code2, _stdout2, _stderr2 = invoke_asyncclick_command(
-            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'draft', f'@{sqid}'], stdin_content=draft_content
+            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'draft', f'@{sqid}'],
+            stdin_content=draft_content,
         )
         assert exit_code2 == 0
 
         # Write content to notes (different keyword)
         notes_content = 'Notes different content'
         exit_code3, _stdout3, _stderr3 = invoke_asyncclick_command(
-            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'notes', f'@{sqid}'], stdin_content=notes_content
+            ['lmk', '--directory', str(isolated_dir), 'types', 'write', 'notes', f'@{sqid}'],
+            stdin_content=notes_content,
         )
         assert exit_code3 == 0
 

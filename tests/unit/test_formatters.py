@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from linemark.cli.formatters import format_json, format_tree
 from linemark.domain.entities import SQID, MaterializedPath, Node, Outline
 
