@@ -47,3 +47,4 @@ Thumbs.db
 # Logs
 *.log
 src/linemark/_version.py
+snapshot_report.html
