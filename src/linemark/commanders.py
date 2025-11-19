@@ -50,17 +50,20 @@ class ConstitutionCommander:  # pragma: no cover
 class CharterCommander:  # pragma: no cover
     """A commander for working with a project's charter."""
 
-    async def read_charter(self, start_path: Path) -> str:  # pragma: no cover
+    def __init__(self, directory: Path) -> None:  # pragma: no cover
+        self.directory = directory
+
+    async def read_charter(self) -> str:  # pragma: no cover
         """Read the charter."""
-        linemark_commander = LinemarkCommander(start_path)
+        linemark_commander = LinemarkCommander(self.directory)
         first_node = first(await linemark_commander.list_nodes())
         if first_node is None:
             raise ValueError('No nodes found')
         return await linemark_commander.read_type(doctype='charter', sqid=first_node.sqid.value)
 
-    async def write_charter(self, start_path: Path, content: str) -> None:  # pragma: no cover
+    async def write_charter(self, content: str) -> None:  # pragma: no cover
         """Write the charter."""
-        linemark_commander = LinemarkCommander(start_path)
+        linemark_commander = LinemarkCommander(self.directory)
         first_node = first(await linemark_commander.list_nodes())
         if first_node is None:
             first_node = await linemark_commander.add(title='Project')

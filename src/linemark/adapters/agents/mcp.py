@@ -57,7 +57,7 @@ constitution_mcp_server = create_sdk_mcp_server(  # pragma: no cover
 )  # pragma: no cover
 async def read_charter(args: dict[str, Any]) -> dict[str, Any]:  # pragma: no cover
     """Read the story charter for the given project directory."""
-    charter_file = await CharterCommander().read_charter(args['start_path'])
+    charter_file = await CharterCommander(args['start_path']).read_charter()
     return {'content': [{'type': 'text', 'text': charter_file}]}
 
 
@@ -66,7 +66,7 @@ async def read_charter(args: dict[str, Any]) -> dict[str, Any]:  # pragma: no co
 )  # pragma: no cover
 async def write_charter(args: dict[str, Any]) -> dict[str, Any]:  # pragma: no cover
     """Write the story charter for the given project directory."""
-    charter_file = await CharterCommander().write_charter(args['start_path'], args['content'])
+    charter_file = await CharterCommander(args['start_path']).write_charter(args['content'])
     return {'content': [{'type': 'text', 'text': f'Charter written successfully to {charter_file}'}]}
 
 
