@@ -23,7 +23,12 @@
     "file-change": [
       {
         "files": ["pyproject.toml", "uv.lock"],
-        "command": "uv sync --all-groups"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv sync --all-groups"
+          }
+        ]
       }
     ]
   },
