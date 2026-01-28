@@ -24,7 +24,7 @@ interface TaskProps {
 export class Task {
   // Private constructor enforces factory usage
   private constructor(private readonly props: TaskProps) {}
-  
+
   // Factory for new entities - validates business rules
   static create(input: { userId: string; title: string }): Task {
     if (!input.title || input.title.trim().length < 3) {
@@ -38,17 +38,17 @@ export class Task {
       createdAt: new Date()
     });
   }
-  
+
   // Factory for reconstitution from persistence - no validation
   static reconstitute(props: TaskProps): Task {
     return new Task(props);
   }
-  
+
   // Getters expose state (never setters)
   get id(): string { return this.props.id; }
   get title(): string { return this.props.title; }
   get isCompleted(): boolean { return this.props.status.isCompleted; }
-  
+
   // Behavior methods enforce business rules
   complete(): void {
     if (this.props.status.isCompleted) {
@@ -56,7 +56,7 @@ export class Task {
     }
     this.props.status = TaskStatus.completed();
   }
-  
+
   rename(newTitle: string): void {
     if (!newTitle || newTitle.trim().length < 3) {
       throw new Error("Title must be at least 3 characters");
@@ -103,7 +103,7 @@ export class Order {
       throw new Error("Order must have at least one item");
     }
   }
-  
+
   addItem(item: LineItem): void {
     // Method invariant: no duplicates
     if (this.props.items.some(i => i.productId === item.productId)) {
@@ -111,7 +111,7 @@ export class Order {
     }
     this.props.items.push(item);
   }
-  
+
   removeItem(productId: string): void {
     // Invariant: can't remove last item
     if (this.props.items.length === 1) {
@@ -129,19 +129,19 @@ Aggregate roots control access to child entities:
 ```typescript
 export class Order {
   private props: OrderProps;
-  
+
   // Child entities accessed through root
   get items(): ReadonlyArray<LineItem> {
     return [...this.props.items]; // Defensive copy
   }
-  
+
   // Modifications go through root's methods
   addItem(productId: string, quantity: number, price: Money): void {
     const item = LineItem.create({ productId, quantity, price });
     this.props.items.push(item);
     this.recalculateTotal();
   }
-  
+
   private recalculateTotal(): void {
     this.props.total = this.props.items.reduce(
       (sum, item) => sum.add(item.subtotal),
@@ -160,30 +160,30 @@ describe("Task", () => {
   describe("create", () => {
     it("creates task with valid title", () => {
       const task = Task.create({ userId: "user-1", title: "Buy milk" });
-      
+
       expect(task.title).toBe("Buy milk");
       expect(task.isCompleted).toBe(false);
       expect(task.id).toBeDefined();
     });
-    
+
     it("rejects short titles", () => {
       expect(() => Task.create({ userId: "user-1", title: "ab" }))
         .toThrow("Title must be at least 3 characters");
     });
-    
+
     it("trims whitespace", () => {
       const task = Task.create({ userId: "user-1", title: "  Buy milk  " });
       expect(task.title).toBe("Buy milk");
     });
   });
-  
+
   describe("complete", () => {
     it("marks pending task as completed", () => {
       const task = Task.create({ userId: "user-1", title: "Test" });
       task.complete();
       expect(task.isCompleted).toBe(true);
     });
-    
+
     it("throws when completing twice", () => {
       const task = Task.create({ userId: "user-1", title: "Test" });
       task.complete();

@@ -64,12 +64,12 @@ export interface OrderRepository {
   findById(id: string): Promise<Order | null>;
   save(order: Order): Promise<void>;
   delete(id: string): Promise<void>;
-  
+
   // Domain-specific queries
   findByCustomerId(customerId: string): Promise<Order[]>;
   findByStatus(status: OrderStatus): Promise<Order[]>;
   findByDateRange(range: DateRange): Promise<Order[]>;
-  
+
   // Aggregate queries
   countByStatus(status: OrderStatus): Promise<number>;
   existsById(id: string): Promise<boolean>;
@@ -98,16 +98,16 @@ export interface PageRequest {
 export interface ProductRepository {
   findById(id: string): Promise<Product | null>;
   save(product: Product): Promise<void>;
-  
+
   // Paginated queries
   findAll(pageRequest: PageRequest): Promise<Page<Product>>;
   findByCategory(
-    categoryId: string, 
+    categoryId: string,
     pageRequest: PageRequest
   ): Promise<Page<Product>>;
-  
+
   search(
-    query: string, 
+    query: string,
     pageRequest: PageRequest
   ): Promise<Page<Product>>;
 }
@@ -163,11 +163,11 @@ export interface TaskRepository {
 // Usage in domain
 export class OverdueTaskSpecification implements TaskSpecification {
   constructor(private now: Date = new Date()) {}
-  
+
   isSatisfiedBy(task: Task): boolean {
     return task.dueDate < this.now && !task.isCompleted;
   }
-  
+
   toSql() {
     return {
       where: "due_date < ? AND completed = 0",
@@ -198,24 +198,24 @@ interface TaskRow {
 
 export class D1TaskRepository implements TaskRepository {
   constructor(private readonly db: D1Database) {}
-  
+
   async findById(id: string): Promise<Task | null> {
     const row = await this.db
       .prepare("SELECT * FROM tasks WHERE id = ?")
       .bind(id)
       .first<TaskRow>();
-    
+
     return row ? this.toDomain(row) : null;
   }
-  
+
   async findAll(): Promise<Task[]> {
     const { results } = await this.db
       .prepare("SELECT * FROM tasks ORDER BY created_at DESC")
       .all<TaskRow>();
-    
+
     return results.map(row => this.toDomain(row));
   }
-  
+
   async save(task: Task): Promise<void> {
     await this.db
       .prepare(`
@@ -234,14 +234,14 @@ export class D1TaskRepository implements TaskRepository {
       )
       .run();
   }
-  
+
   async delete(id: string): Promise<void> {
     await this.db
       .prepare("DELETE FROM tasks WHERE id = ?")
       .bind(id)
       .run();
   }
-  
+
   // Map database row to domain entity
   private toDomain(row: TaskRow): Task {
     return Task.reconstitute({
@@ -289,23 +289,23 @@ async execute(request: CreateOrderRequest): Promise<void> {
 // In-memory implementation for unit tests
 class InMemoryTaskRepository implements TaskRepository {
   private tasks = new Map<string, Task>();
-  
+
   async findById(id: string): Promise<Task | null> {
     return this.tasks.get(id) ?? null;
   }
-  
+
   async findAll(): Promise<Task[]> {
     return [...this.tasks.values()];
   }
-  
+
   async save(task: Task): Promise<void> {
     this.tasks.set(task.id, task);
   }
-  
+
   async delete(id: string): Promise<void> {
     this.tasks.delete(id);
   }
-  
+
   // Test helper
   clear(): void {
     this.tasks.clear();
@@ -316,15 +316,15 @@ class InMemoryTaskRepository implements TaskRepository {
 describe("CreateTask", () => {
   let repository: InMemoryTaskRepository;
   let useCase: CreateTask;
-  
+
   beforeEach(() => {
     repository = new InMemoryTaskRepository();
     useCase = new CreateTask(repository);
   });
-  
+
   it("creates and persists task", async () => {
     const result = await useCase.execute({ userId: "u1", title: "Test" });
-    
+
     const saved = await repository.findById(result.id);
     expect(saved).not.toBeNull();
     expect(saved!.title).toBe("Test");

@@ -29,7 +29,7 @@ gen = g.generate("A kitten with purple-and-green fur.", save_dir="/mnt/user-data
 gen_edit = g.generate("Change the background to a beach.", gen.image, save_dir="/mnt/user-data/outputs")
 
 # Multi-image blend (max 3 images recommended)
-gen_blend = g.generate("Place the person from image 1 into the scene from image 2.", 
+gen_blend = g.generate("Place the person from image 1 into the scene from image 2.",
                        ["person.png", "background.png"], save_dir="/mnt/user-data/outputs")
 ```
 

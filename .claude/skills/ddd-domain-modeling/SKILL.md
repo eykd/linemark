@@ -40,10 +40,10 @@ export class Order {
   private constructor(private props: OrderProps) {
     // Validate invariants here
   }
-  
+
   static create(input: CreateOrderInput): Order { /* validate + new */ }
   static reconstitute(props: OrderProps): Order { /* from persistence */ }
-  
+
   // Getters + behavior methods that enforce rules
 }
 ```
@@ -55,17 +55,17 @@ export class Money {
     public readonly amount: number,
     public readonly currency: string
   ) {}
-  
+
   static of(amount: number, currency: string): Money {
     if (amount < 0) throw new Error("Amount cannot be negative");
     return new Money(amount, currency);
   }
-  
+
   add(other: Money): Money {
     if (this.currency !== other.currency) throw new Error("Currency mismatch");
     return Money.of(this.amount + other.amount, this.currency);
   }
-  
+
   equals(other: Money): boolean {
     return this.amount === other.amount && this.currency === other.currency;
   }

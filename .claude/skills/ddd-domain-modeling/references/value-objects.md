@@ -25,11 +25,11 @@ Value objects are immutable, defined by their attributes, and have no identity.
 ```typescript
 export class Email {
   private readonly _value: string;
-  
+
   private constructor(value: string) {
     this._value = value;
   }
-  
+
   static create(value: string): Email {
     const normalized = value.toLowerCase().trim();
     if (!Email.isValid(normalized)) {
@@ -37,19 +37,19 @@ export class Email {
     }
     return new Email(normalized);
   }
-  
+
   private static isValid(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
-  
+
   get value(): string {
     return this._value;
   }
-  
+
   get domain(): string {
     return this._value.split("@")[1];
   }
-  
+
   equals(other: Email): boolean {
     return this._value === other._value;
   }
@@ -63,13 +63,13 @@ export class TaskStatus {
   private static readonly PENDING = new TaskStatus("pending");
   private static readonly IN_PROGRESS = new TaskStatus("in_progress");
   private static readonly COMPLETED = new TaskStatus("completed");
-  
+
   private constructor(private readonly _value: string) {}
-  
+
   static pending(): TaskStatus { return TaskStatus.PENDING; }
   static inProgress(): TaskStatus { return TaskStatus.IN_PROGRESS; }
   static completed(): TaskStatus { return TaskStatus.COMPLETED; }
-  
+
   static fromString(value: string): TaskStatus {
     switch (value) {
       case "pending": return TaskStatus.PENDING;
@@ -78,11 +78,11 @@ export class TaskStatus {
       default: throw new Error(`Invalid status: ${value}`);
     }
   }
-  
+
   get value(): string { return this._value; }
   get isPending(): boolean { return this === TaskStatus.PENDING; }
   get isCompleted(): boolean { return this === TaskStatus.COMPLETED; }
-  
+
   canTransitionTo(target: TaskStatus): boolean {
     if (this === TaskStatus.PENDING) {
       return target === TaskStatus.IN_PROGRESS;
@@ -103,7 +103,7 @@ export class Money {
     public readonly amount: number,
     public readonly currency: string
   ) {}
-  
+
   static of(amount: number, currency: string): Money {
     if (!Number.isFinite(amount)) {
       throw new Error("Amount must be a finite number");
@@ -117,16 +117,16 @@ export class Money {
     // Round to 2 decimal places
     return new Money(Math.round(amount * 100) / 100, currency);
   }
-  
+
   static zero(currency: string): Money {
     return Money.of(0, currency);
   }
-  
+
   add(other: Money): Money {
     this.assertSameCurrency(other);
     return Money.of(this.amount + other.amount, this.currency);
   }
-  
+
   subtract(other: Money): Money {
     this.assertSameCurrency(other);
     if (other.amount > this.amount) {
@@ -134,22 +134,22 @@ export class Money {
     }
     return Money.of(this.amount - other.amount, this.currency);
   }
-  
+
   multiply(factor: number): Money {
     if (factor < 0) throw new Error("Factor cannot be negative");
     return Money.of(this.amount * factor, this.currency);
   }
-  
+
   private assertSameCurrency(other: Money): void {
     if (this.currency !== other.currency) {
       throw new Error(`Currency mismatch: ${this.currency} vs ${other.currency}`);
     }
   }
-  
+
   equals(other: Money): boolean {
     return this.amount === other.amount && this.currency === other.currency;
   }
-  
+
   toString(): string {
     return `${this.currency} ${this.amount.toFixed(2)}`;
   }
@@ -163,18 +163,18 @@ export class Money {
 ```typescript
 export class TaskId {
   private constructor(public readonly value: string) {}
-  
+
   static create(): TaskId {
     return new TaskId(crypto.randomUUID());
   }
-  
+
   static from(value: string): TaskId {
     if (!value || value.trim().length === 0) {
       throw new Error("TaskId cannot be empty");
     }
     return new TaskId(value);
   }
-  
+
   equals(other: TaskId): boolean {
     return this.value === other.value;
   }
@@ -189,22 +189,22 @@ export class DateRange {
     public readonly start: Date,
     public readonly end: Date
   ) {}
-  
+
   static create(start: Date, end: Date): DateRange {
     if (end < start) {
       throw new Error("End date must be after start date");
     }
     return new DateRange(start, end);
   }
-  
+
   contains(date: Date): boolean {
     return date >= this.start && date <= this.end;
   }
-  
+
   overlaps(other: DateRange): boolean {
     return this.start <= other.end && this.end >= other.start;
   }
-  
+
   get durationInDays(): number {
     return Math.ceil((this.end.getTime() - this.start.getTime()) / (1000 * 60 * 60 * 24));
   }
@@ -221,7 +221,7 @@ export class Address {
     public readonly postalCode: string,
     public readonly country: string
   ) {}
-  
+
   static create(props: {
     street: string;
     city: string;
@@ -232,7 +232,7 @@ export class Address {
     if (!props.city?.trim()) throw new Error("City is required");
     if (!props.postalCode?.trim()) throw new Error("Postal code is required");
     if (!props.country?.trim()) throw new Error("Country is required");
-    
+
     return new Address(
       props.street.trim(),
       props.city.trim(),
@@ -240,7 +240,7 @@ export class Address {
       props.country.trim()
     );
   }
-  
+
   equals(other: Address): boolean {
     return (
       this.street === other.street &&
@@ -249,7 +249,7 @@ export class Address {
       this.country === other.country
     );
   }
-  
+
   format(): string {
     return `${this.street}, ${this.city}, ${this.postalCode}, ${this.country}`;
   }
@@ -282,42 +282,42 @@ describe("Money", () => {
       expect(money.amount).toBe(100);
       expect(money.currency).toBe("USD");
     });
-    
+
     it("rounds to 2 decimal places", () => {
       const money = Money.of(10.999, "USD");
       expect(money.amount).toBe(11);
     });
-    
+
     it("rejects negative amounts", () => {
       expect(() => Money.of(-10, "USD")).toThrow("cannot be negative");
     });
-    
+
     it("rejects invalid currency codes", () => {
       expect(() => Money.of(10, "US")).toThrow("3-letter ISO");
     });
   });
-  
+
   describe("operations", () => {
     it("adds same currency", () => {
       const a = Money.of(10, "USD");
       const b = Money.of(20, "USD");
       expect(a.add(b).amount).toBe(30);
     });
-    
+
     it("rejects adding different currencies", () => {
       const usd = Money.of(10, "USD");
       const eur = Money.of(10, "EUR");
       expect(() => usd.add(eur)).toThrow("Currency mismatch");
     });
   });
-  
+
   describe("equality", () => {
     it("equals same value", () => {
       const a = Money.of(10, "USD");
       const b = Money.of(10, "USD");
       expect(a.equals(b)).toBe(true);
     });
-    
+
     it("not equals different amount", () => {
       const a = Money.of(10, "USD");
       const b = Money.of(20, "USD");
