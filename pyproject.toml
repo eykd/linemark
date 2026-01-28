@@ -113,7 +113,7 @@ module-root = "src"
 line-length = 120
 src = ["src"]
 target-version = "py312"
-exclude = ["specs/", ".claude/"]
+exclude = ["specs/"]
 
 [tool.ruff.lint]
 preview = true
@@ -291,6 +291,18 @@ unfixable = []
 "src/linemark/adapters/id_generator_uuid7.py" = ["PLR6301"]
 # Fake adapters implement complete interfaces, leading to many methods
 "src/linemark/adapters/fake_node_repo.py" = ["PLR0904"]
+
+# Utility scripts in .claude/ directory - relaxed rules appropriate for CLI tools
+".claude/**/*.py" = [
+    "T201",    # print statements - appropriate for CLI utility scripts
+    "ANN001",  # missing type annotation for function arguments
+    "ANN201",  # missing return type annotation
+    "D103",    # missing docstring in public function
+    "D104",    # missing docstring in public package
+    "BLE001",  # blind except - acceptable for utility error handling
+    "C901",    # function complexity - acceptable for utility scripts
+    "PLR1722", # use sys.exit() instead of exit() - acceptable for scripts
+]
 
 
 [tool.ruff.lint.flake8-quotes]

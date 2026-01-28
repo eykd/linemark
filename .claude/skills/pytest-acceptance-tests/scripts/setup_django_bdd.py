@@ -236,10 +236,7 @@ def create_test_settings(project_root, settings_module):
         return
 
     # Determine base import
-    if (settings_dir / 'base.py').exists():
-        base_import = 'from .base import *'
-    else:
-        base_import = 'from .settings import *'
+    base_import = 'from .base import *' if (settings_dir / 'base.py').exists() else 'from .settings import *'
 
     content = f'''"""Test-specific Django settings."""
 {base_import}

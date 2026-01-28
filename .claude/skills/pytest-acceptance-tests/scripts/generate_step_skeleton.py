@@ -10,13 +10,14 @@ Usage:
 """
 
 import argparse
+import operator
 import re
 from pathlib import Path
 
 
 def parse_feature_file(feature_path):
     """Parse feature file and extract unique steps."""
-    with open(feature_path) as f:
+    with Path(feature_path).open(encoding='utf-8') as f:
         content = f.read()
 
     # Find all Given/When/Then/And/But steps
@@ -30,11 +31,8 @@ def parse_feature_file(feature_path):
             text = match.group(2).strip()
 
             # Convert And/But to previous keyword type
-            if keyword in ['And', 'But']:
-                if steps:
-                    keyword = steps[-1]['keyword']
-                else:
-                    keyword = 'Given'  # Default
+            if keyword in {'And', 'But'}:
+                keyword = steps[-1]['keyword'] if steps else 'Given'
 
             steps.append({'keyword': keyword, 'text': text, 'original': line.strip()})
 
@@ -63,8 +61,7 @@ def detect_parameters(step_text):
     params = []
     for pattern, param_type in patterns:
         matches = re.finditer(pattern, step_text)
-        for match in matches:
-            params.append({'value': match.group(0), 'type': param_type, 'position': match.start()})
+        params.extend({'value': match.group(0), 'type': param_type, 'position': match.start()} for match in matches)
 
     return params
 
@@ -101,32 +98,30 @@ def generate_step_definition(step):
         param_text = text
         param_names = []
 
-        for i, param in enumerate(sorted(params, key=lambda p: p['position'], reverse=True)):
+        for i, param in enumerate(sorted(params, key=operator.itemgetter('position'), reverse=True)):
             if param['type'] == 'quoted string':
                 # Replace quoted string with parameter
                 param_name = f'value{i + 1}' if len(params) > 1 else 'value'
                 param_text = param_text.replace(param['value'], f'"{{{param_name}}}"', 1)
                 param_names.append(param_name)
-            elif param['type'] in ['number', 'decimal']:
+            elif param['type'] in {'number', 'decimal'}:
                 param_name = f'count{i + 1}' if len(params) > 1 else 'count'
                 param_text = param_text.replace(param['value'], f'{{{param_name}}}', 1)
                 param_names.append(param_name)
 
         decorator = f"@{keyword}(parsers.parse('{param_text}'))"
-        function_params = ', '.join(['browser'] + param_names)
+        function_params = ', '.join(['browser', *param_names])
     else:
         # Simple step without parameters
         decorator = f'@{keyword}("{text}")'
         function_params = 'browser'
 
     # Generate function
-    code = f'''{decorator}
+    return f'''{decorator}
 def {func_name}({function_params}):
     """TODO: Implement step."""
     raise NotImplementedError("Step not implemented: {text}")
 '''
-
-    return code
 
 
 def generate_step_file(feature_path, output_path=None):
@@ -194,7 +189,7 @@ scenarios('../features/{feature_name}.feature')
             print('Cancelled')
             return
 
-    with open(output_path, 'w') as f:
+    with Path(output_path).open('w', encoding='utf-8') as f:
         f.write(code)
 
     print(f'✓ Generated step definitions: {output_path}')

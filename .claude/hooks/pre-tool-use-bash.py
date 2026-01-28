@@ -18,6 +18,7 @@ def read_stdin() -> str:
 
     Returns:
         Complete stdin content as a string.
+
     """
     return sys.stdin.read()
 
