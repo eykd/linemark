@@ -12,9 +12,11 @@ from textual.widgets import (
     Header,
     Markdown,
     MarkdownViewer,
+    Static,
     TextArea,
 )
 
+from linemark.adapters.agents.s5.assistant import S5AssistantAgent
 from linemark.domain.agents import StreamEventType
 from linemark.ports.agents import AgentPort
 
@@ -38,14 +40,17 @@ class AgentApp(App[None]):
     CSS = """
         Screen {
             layout: grid;
-            grid-size: 1 2;
+            grid-size: 1 3;
             grid-columns: 1fr;
-            grid-rows: 80% 20%;
+            grid-rows: 80% 1fr 20%;
         }
 
         #markdown {
             height: 100%;
             width: 100%;
+        }
+        #status {
+            height: 100%;
         }
         #input {
             height: 100%;
@@ -57,15 +62,19 @@ class AgentApp(App[None]):
         Binding('enter', 'submit_query', 'Submit Query', priority=True),
     ]
 
-    def __init__(self, agent: AgentPort, testing: bool = False) -> None:  # noqa: FBT001, FBT002
+    s5_agent: AgentPort
+
+    def __init__(self, agent: AgentPort = None, initial_query: str | None = None, testing: bool = False) -> None:  # noqa: FBT001, FBT002
         super().__init__()
-        self.agent = agent
+        self.s5_agent = agent if agent is not None else S5AssistantAgent()  # pragma: no cover
+        self.initial_query = initial_query or "Let's get started!"
         self.testing = testing
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
         yield Header()
         yield MarkdownViewer(id='markdown', show_table_of_contents=False)
+        yield Static('Waiting for input…', id='status')
         yield UserInputTextArea(placeholder='Enter your query here...', id='input')
         yield Footer()
 
@@ -96,29 +105,38 @@ class AgentApp(App[None]):
         # Capture keyboard focus for the input text area:
         self.input_widget.focus()
 
-        # Start the agent worker once the UI is ready:
-        self._run_agent()
+        # Start the S5 agent worker once the UI is ready:
+        self._run_s5_agent()
 
     async def action_submit_query(self) -> None:
         """Submit the user's query to the agent."""
         # Send the user's message to the agent:
         user_query = self.input_widget.text
-        await self.agent.submit_query(user_query)
+        await self.s5_agent.submit_query(user_query)
         self.input_widget.text = ''
         await self.append_markdown(f'**User:** {user_query}\n\n')
 
     @work(exclusive=True)
-    async def _run_agent(self) -> None:
-        """Run the agent to receive messages in the background."""
-        async with self.agent:
-            await self.append_markdown('=== Agent started ===\n\n')
-            await self.agent.submit_query("Let's get started!")
+    async def _run_s5_agent(self) -> None:  # noqa: C901
+        """Run the System 5 agent to receive messages in the background."""
+        async with self.s5_agent:
+            await self.append_markdown('=== System 5 agent started ===\n\n')
+            if self.initial_query:
+                initial_query = f"{self.initial_query}\n\nLet's get started!"
+            else:
+                initial_query = "Let's get started!"
+            await self.s5_agent.submit_query(initial_query)
+            await self.append_markdown(f'**User:** {initial_query}\n\n')
             # Receive messages from the agent in a loop:
             while True:
-                async for event in self.agent.receive_events():  # type: ignore[attr-defined]
+                async for event in self.s5_agent.receive_events():  # type: ignore[attr-defined]
                     match event.event_type:
+                        case StreamEventType.START_MESSAGE:
+                            self.query_one('#status').loading = True
+                        case StreamEventType.END_MESSAGE:
+                            self.query_one('#status').loading = False
                         case StreamEventType.START_CONTENT_BLOCK:
-                            await self.append_markdown(f'**{event.role.upper()}:** ')
+                            await self.append_markdown(f'**{event.role.replace("_", " ").upper()}:** ')
                         case StreamEventType.DELTA_CONTENT_BLOCK:
                             await self.append_markdown(event.content)
                         case StreamEventType.END_CONTENT_BLOCK:

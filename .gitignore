@@ -48,3 +48,4 @@ Thumbs.db
 *.log
 src/linemark/_version.py
 snapshot_report.html
+.sprite

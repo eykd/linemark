@@ -5,6 +5,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Self
 
+from linemark.domain.messages import Switchboard
+
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
     from types import TracebackType
@@ -14,6 +16,8 @@ if TYPE_CHECKING:
 
 class AgentPort(ABC):
     """Agent port contract."""
+
+    switchboard: Switchboard = Switchboard()
 
     @abstractmethod
     async def submit_query(self, query: str) -> None:

@@ -30,14 +30,14 @@ def lmk(ctx: click.Context, directory: Path) -> None:
 
 
 @lmk.command(name='agent')
+@click.argument('initial_query', required=False)
 @click.pass_context
-def agent(ctx: click.Context) -> None:  # noqa: ARG001  # pragma: no cover
+async def agent(ctx: click.Context, initial_query: str | None) -> None:  # noqa: ARG001  # pragma: no cover
     """Start the agent."""
-    from linemark.adapters.agents.s5_identity.assistant import AssistantAgent  # pragma: no cover
-    from linemark.cli.tui import AgentApp  # pragma: no cover
+    from linemark.cli.tui import AgentApp
 
-    app = AgentApp(agent=AssistantAgent())  # pragma: no cover
-    app.run()  # pragma: no cover
+    app = AgentApp(initial_query=initial_query)
+    await app.run_async()
 
 
 @lmk.command(name='compile')
@@ -798,5 +798,5 @@ def main() -> None:
     lmk()
 
 
-if __name__ == '__main__':
-    main()  # pragma: no cover
+if __name__ == '__main__':  # pragma: no cover
+    main()

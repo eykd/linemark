@@ -10,10 +10,13 @@ from pydantic import BaseModel, Field
 class StreamEventType(StrEnum):
     """The type of stream event."""
 
+    START_MESSAGE = 'start_message'
+    END_MESSAGE = 'end_message'
     START_CONTENT_BLOCK = 'start_content_block'
     DELTA_CONTENT_BLOCK = 'delta_content_block'
     END_CONTENT_BLOCK = 'end_content_block'
     RESULT = 'result'
+    UNKNOWN_EVENT = 'unknown_event'
 
 
 class AgentStreamEvent(BaseModel):
