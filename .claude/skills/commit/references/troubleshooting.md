@@ -143,6 +143,48 @@ docs: update [documentation type]
 - Clarify [concept]
 ```
 
+## Pre-commit Hook Failures
+
+**CRITICAL**: If git pre-commit hooks fail, you MUST fix the issue. NEVER use `--no-verify` or any method to skip hooks.
+
+### Tool Not Found Errors (e.g., "Executable `uv` not found")
+
+If pre-commit hooks fail because they can't find `uv` or other tools:
+
+1. **STOP** - Do not bypass hooks with `--no-verify`
+2. **INVESTIGATE** - The tool may not be in the PATH used by pre-commit
+3. **ASK THE USER** - Request guidance on how to fix the PATH or environment issue
+4. **POSSIBLE SOLUTIONS** (user should decide):
+   - Update `.pre-commit-config.yaml` to use full path to tools
+   - Set up pre-commit to use the correct Python environment
+   - Install tools in pre-commit's isolated environment
+   - Disable problematic hooks (only if user approves)
+
+**Example error:**
+
+```
+uv-lock..................................................................Failed
+- hook id: uv-lock
+- exit code: 1
+
+Executable `uv` not found
+```
+
+**What NOT to do:**
+
+```bash
+# ❌ NEVER DO THIS
+git commit --no-verify -m "message"
+```
+
+**What to do:**
+
+```bash
+# ✅ Stop and ask the user
+# "The pre-commit hooks are failing because uv isn't found.
+# How should I fix this? Should I update the pre-commit config?"
+```
+
 ## Environment Issues
 
 ### Missing Dependencies
@@ -162,12 +204,18 @@ uv sync --all-groups
 
 ### Git Hook Configuration
 
-This project uses PostToolUse hooks (Claude Code feature), not git pre-commit hooks.
+This project may use both:
+- **PostToolUse hooks** (Claude Code feature) - run after Edit/Write
+- **Git pre-commit hooks** (via `.pre-commit-config.yaml`) - run during commit
 
-To check hook configuration:
+To check configurations:
 
 ```bash
+# PostToolUse hooks (Claude Code)
 cat .claude/settings.json
+
+# Git pre-commit hooks
+cat .pre-commit-config.yaml
 ```
 
 ## Recovery from Failed Commits

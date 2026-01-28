@@ -103,6 +103,14 @@ EOF
 
 ## Important Rules
 
+**CRITICAL - Pre-commit Hooks:**
+
+- ❌ **NEVER EVER** use `--no-verify`, `--no-gpg-sign`, or any flag to skip hooks
+- ❌ **NEVER EVER** bypass pre-commit validation in ANY way
+- ✅ Pre-commit hooks are ESSENTIAL quality control and MUST ALWAYS pass
+- ✅ If hooks fail, you MUST fix the underlying issue, not skip the hooks
+- ✅ If you can't fix the issue, ask the user for help - DO NOT bypass hooks
+
 **Stage files explicitly:**
 
 - ❌ Never use `git add -A` or `git add .`
@@ -131,7 +139,14 @@ If validation fails during development, fix issues before committing.
 3. Fix any issues reported by hooks
 4. Stage files explicitly: `git add file.py`
 5. Commit with conventional format
-6. If commit fails, fix issues and create a NEW commit (never amend)
+6. If pre-commit hooks fail:
+   - **STOP** - do not proceed with commit
+   - **INVESTIGATE** - read the error messages carefully
+   - **FIX** - resolve the underlying issue (missing tools, failing tests, etc.)
+   - **NEVER** use `--no-verify` or any method to skip hooks
+   - If you can't fix the issue, ask the user for guidance
+7. After hooks pass, verify commit was created: `git log --oneline -n 3`
+8. If commit fails for other reasons, fix issues and create a NEW commit (never amend)
 
 ## Reference
 
