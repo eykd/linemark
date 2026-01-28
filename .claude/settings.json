@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd $CLAUDE_PROJECT_DIR/.claude/hooks && cat | npx tsx pre-tool-use-bash.ts"
+            "command": "cat | python3 $CLAUDE_PROJECT_DIR/.claude/hooks/pre-tool-use-bash.py"
           }
         ]
       }
