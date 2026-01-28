@@ -29,17 +29,6 @@ def lmk(ctx: click.Context, directory: Path) -> None:
     ctx.obj = {'directory': directory}
 
 
-@lmk.command(name='agent')
-@click.argument('initial_query', required=False)
-@click.pass_context
-async def agent(ctx: click.Context, initial_query: str | None) -> None:  # noqa: ARG001  # pragma: no cover
-    """Start the agent."""
-    from linemark.cli.tui import AgentApp
-
-    app = AgentApp(initial_query=initial_query)
-    await app.run_async()
-
-
 @lmk.command(name='compile')
 @click.argument('doctype')
 @click.argument('sqid', required=False)

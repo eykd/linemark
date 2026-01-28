@@ -17,10 +17,10 @@ from pathlib import Path
 def create_directory_structure(project_root):
     """Create test directory structure."""
     test_dirs = [
-        "tests",
-        "tests/acceptance",
-        "tests/acceptance/features",
-        "tests/acceptance/step_defs",
+        'tests',
+        'tests/acceptance',
+        'tests/acceptance/features',
+        'tests/acceptance/step_defs',
     ]
 
     for dir_path in test_dirs:
@@ -28,23 +28,23 @@ def create_directory_structure(project_root):
         full_path.mkdir(parents=True, exist_ok=True)
 
         # Create __init__.py files
-        if dir_path.startswith("tests"):
-            init_file = full_path / "__init__.py"
+        if dir_path.startswith('tests'):
+            init_file = full_path / '__init__.py'
             if not init_file.exists():
                 init_file.write_text('"""Test package."""\n')
 
-        print(f"✓ Created {dir_path}/")
+        print(f'✓ Created {dir_path}/')
 
 
 def create_pytest_ini(project_root, settings_module):
     """Create pytest.ini configuration."""
-    pytest_ini = project_root / "pytest.ini"
+    pytest_ini = project_root / 'pytest.ini'
 
     if pytest_ini.exists():
-        print(f"! pytest.ini already exists at {pytest_ini}")
-        response = input("  Overwrite? (y/N): ")
-        if response.lower() != "y":
-            print("  Skipped pytest.ini")
+        print(f'! pytest.ini already exists at {pytest_ini}')
+        response = input('  Overwrite? (y/N): ')
+        if response.lower() != 'y':
+            print('  Skipped pytest.ini')
             return
 
     content = f"""[pytest]
@@ -81,15 +81,15 @@ norecursedirs = .git .tox dist build *.egg venv node_modules
 """
 
     pytest_ini.write_text(content)
-    print("✓ Created pytest.ini")
+    print('✓ Created pytest.ini')
 
 
 def create_root_conftest(project_root):
     """Create root conftest.py."""
-    conftest = project_root / "tests" / "conftest.py"
+    conftest = project_root / 'tests' / 'conftest.py'
 
     if conftest.exists():
-        print("! tests/conftest.py already exists")
+        print('! tests/conftest.py already exists')
         return
 
     content = '''"""Root test configuration."""
@@ -129,15 +129,15 @@ def api_client():
 '''
 
     conftest.write_text(content)
-    print("✓ Created tests/conftest.py")
+    print('✓ Created tests/conftest.py')
 
 
 def create_acceptance_conftest(project_root):
     """Create acceptance test conftest.py."""
-    conftest = project_root / "tests" / "acceptance" / "conftest.py"
+    conftest = project_root / 'tests' / 'acceptance' / 'conftest.py'
 
     if conftest.exists():
-        print("! tests/acceptance/conftest.py already exists")
+        print('! tests/acceptance/conftest.py already exists')
         return
 
     content = '''"""Acceptance test configuration."""
@@ -213,13 +213,13 @@ def admin_user(db):
 '''
 
     conftest.write_text(content)
-    print("✓ Created tests/acceptance/conftest.py")
+    print('✓ Created tests/acceptance/conftest.py')
 
 
 def create_test_settings(project_root, settings_module):
     """Create test settings file."""
     # Extract project name and settings location
-    parts = settings_module.split(".")
+    parts = settings_module.split('.')
     if len(parts) == 2:
         # myproject.settings
         project_name = parts[0]
@@ -227,19 +227,19 @@ def create_test_settings(project_root, settings_module):
     else:
         # myproject.settings.base
         project_name = parts[0]
-        settings_dir = project_root / project_name / "settings"
+        settings_dir = project_root / project_name / 'settings'
 
-    test_settings = settings_dir / "test.py"
+    test_settings = settings_dir / 'test.py'
 
     if test_settings.exists():
-        print(f"! {test_settings} already exists")
+        print(f'! {test_settings} already exists')
         return
 
     # Determine base import
-    if (settings_dir / "base.py").exists():
-        base_import = "from .base import *"
+    if (settings_dir / 'base.py').exists():
+        base_import = 'from .base import *'
     else:
-        base_import = "from .settings import *"
+        base_import = 'from .settings import *'
 
     content = f'''"""Test-specific Django settings."""
 {base_import}
@@ -304,17 +304,15 @@ LOGGING = {{
 
     settings_dir.mkdir(parents=True, exist_ok=True)
     test_settings.write_text(content)
-    print(f"✓ Created {test_settings}")
+    print(f'✓ Created {test_settings}')
 
 
 def create_example_feature(project_root):
     """Create example feature file."""
-    feature_file = (
-        project_root / "tests" / "acceptance" / "features" / "example.feature"
-    )
+    feature_file = project_root / 'tests' / 'acceptance' / 'features' / 'example.feature'
 
     if feature_file.exists():
-        print("! example.feature already exists")
+        print('! example.feature already exists')
         return
 
     content = """Feature: Homepage
@@ -329,15 +327,15 @@ def create_example_feature(project_root):
 """
 
     feature_file.write_text(content)
-    print("✓ Created example.feature")
+    print('✓ Created example.feature')
 
 
 def create_example_steps(project_root):
     """Create example step definitions."""
-    steps_file = project_root / "tests" / "acceptance" / "step_defs" / "test_example.py"
+    steps_file = project_root / 'tests' / 'acceptance' / 'step_defs' / 'test_example.py'
 
     if steps_file.exists():
-        print("! test_example.py already exists")
+        print('! test_example.py already exists')
         return
 
     content = '''"""Example step definitions."""
@@ -369,15 +367,15 @@ def see_navigation(browser):
 '''
 
     steps_file.write_text(content)
-    print("✓ Created test_example.py")
+    print('✓ Created test_example.py')
 
 
 def create_requirements(project_root):
     """Create requirements-test.txt."""
-    req_file = project_root / "requirements-test.txt"
+    req_file = project_root / 'requirements-test.txt'
 
     if req_file.exists():
-        print("! requirements-test.txt already exists")
+        print('! requirements-test.txt already exists')
         return
 
     content = """# Testing dependencies
@@ -393,15 +391,15 @@ splinter[django]>=0.19.0
 """
 
     req_file.write_text(content)
-    print("✓ Created requirements-test.txt")
+    print('✓ Created requirements-test.txt')
 
 
 def create_readme(project_root):
     """Create README for tests."""
-    readme = project_root / "tests" / "README.md"
+    readme = project_root / 'tests' / 'README.md'
 
     if readme.exists():
-        print("! tests/README.md already exists")
+        print('! tests/README.md already exists')
         return
 
     content = """# Django Acceptance Tests
@@ -463,28 +461,28 @@ tests/
 """
 
     readme.write_text(content)
-    print("✓ Created tests/README.md")
+    print('✓ Created tests/README.md')
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Setup Django BDD test infrastructure")
+    parser = argparse.ArgumentParser(description='Setup Django BDD test infrastructure')
     parser.add_argument(
-        "--project-root",
-        default=".",
-        help="Django project root directory (default: current directory)",
+        '--project-root',
+        default='.',
+        help='Django project root directory (default: current directory)',
     )
     parser.add_argument(
-        "--settings-module",
-        help="Django settings module (e.g., myproject.settings). Will be auto-detected if not provided.",
+        '--settings-module',
+        help='Django settings module (e.g., myproject.settings). Will be auto-detected if not provided.',
     )
 
     args = parser.parse_args()
     project_root = Path(args.project_root).resolve()
 
     # Verify this is a Django project
-    if not (project_root / "manage.py").exists():
-        print(f"ERROR: No manage.py found in {project_root}")
-        print("Please run from Django project root or specify --project-root")
+    if not (project_root / 'manage.py').exists():
+        print(f'ERROR: No manage.py found in {project_root}')
+        print('Please run from Django project root or specify --project-root')
         sys.exit(1)
 
     # Auto-detect settings module if not provided
@@ -492,20 +490,20 @@ def main():
     if not settings_module:
         # Try to find settings module
         for item in project_root.iterdir():
-            if item.is_dir() and (item / "settings.py").exists():
-                settings_module = f"{item.name}.settings"
+            if item.is_dir() and (item / 'settings.py').exists():
+                settings_module = f'{item.name}.settings'
                 break
-            if item.is_dir() and (item / "settings" / "base.py").exists():
-                settings_module = f"{item.name}.settings.base"
+            if item.is_dir() and (item / 'settings' / 'base.py').exists():
+                settings_module = f'{item.name}.settings.base'
                 break
 
         if not settings_module:
-            print("ERROR: Could not auto-detect settings module")
-            print("Please specify --settings-module")
+            print('ERROR: Could not auto-detect settings module')
+            print('Please specify --settings-module')
             sys.exit(1)
 
-    print(f"\nSetting up Django BDD tests in: {project_root}")
-    print(f"Using settings module: {settings_module}\n")
+    print(f'\nSetting up Django BDD tests in: {project_root}')
+    print(f'Using settings module: {settings_module}\n')
 
     # Create structure
     create_directory_structure(project_root)
@@ -518,13 +516,13 @@ def main():
     create_requirements(project_root)
     create_readme(project_root)
 
-    print("\n✓ Setup complete!")
-    print("\nNext steps:")
-    print("  1. Install dependencies: pip install -r requirements-test.txt")
-    print("  2. Run example test: pytest tests/acceptance/step_defs/test_example.py")
-    print("  3. Customize tests/acceptance/conftest.py for your models")
-    print("  4. Write your feature files and step definitions\n")
+    print('\n✓ Setup complete!')
+    print('\nNext steps:')
+    print('  1. Install dependencies: pip install -r requirements-test.txt')
+    print('  2. Run example test: pytest tests/acceptance/step_defs/test_example.py')
+    print('  3. Customize tests/acceptance/conftest.py for your models')
+    print('  4. Write your feature files and step definitions\n')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
